@@ -1,0 +1,4 @@
+polars[all]
+Levenshtein
+ipykernel
+jupyter
