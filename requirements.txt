@@ -2,3 +2,4 @@ polars[all]
 Levenshtein
 ipykernel
 jupyter
+nbconvert
