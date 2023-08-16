@@ -10,6 +10,7 @@ data on searches performed
 data on pmp database users
 # supplement  
 this data is required to add supplemental information such as overlapping prescriptions, opioids to opioid naive patients, etc.  
+number of rx written over MME threshold and opioid and benzodiazepine counts do not require supplemental data
 ### active_rx_data.csv  
 all active prescriptions for opioids and benzodiazepines  
 ### naive_rx_data.csv  
