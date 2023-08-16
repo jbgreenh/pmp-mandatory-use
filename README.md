@@ -42,6 +42,7 @@ as noted in the code, this also means that overlaps are only counted if the seco
     (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi'))))
 )
 ```
+this has the consequence of not counting any overlaps prescribed at the same time by the same prescriber, as stated above, the goal of this style of measurement is to only count overlaps that could have been prevented by the second prescriber performing a search
 
 `both`: includes `overlapping_rx_part` and `overlapping_rx_last` in the results  
 this comes at a performance cost as essentially, the overlap calculations must be run twice
