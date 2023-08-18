@@ -3,6 +3,9 @@ the following is a description of the input files required in this `data` folder
 file names and field names should match those below exactly
 # base  
 this data is required to run the notebook at its most basic version, outputting prescribers, dipsensations, searches, and search rate  
+```python
+SUPPLEMENT = False
+```
 ## `dispensations_data.csv`
 data on all dispensations requiring a search
 ___  
@@ -67,7 +70,10 @@ ___
 | Specialty Level 3        | third level of taxonomy             |
 # supplement  
 this data is required to add supplemental information such as overlapping prescriptions, opioids to opioid naive patients, etc.  
-number of rx written over MME threshold and opioid and benzodiazepine counts do not require supplemental data
+number of rx written over MME threshold and opioid and benzodiazepine counts do not require supplemental data  
+```python
+SUPPLEMENT = True
+```
 ## `active_rx_data.csv`  
 all active prescriptions for opioids and benzodiazepines  
 ___
@@ -90,12 +96,12 @@ ___
 | Month, Day, Year of Filled At                | when the prescription was filled                            |
 | Month, Day, Year of rx_end                   | calculated field `[Filled At]+[Days Supply]`              |
 ## `naive_rx_data.csv`  
-all opioid prescriptions that are active + `NAIVE_DAYS`
+all opioid prescriptions that are active + 60 extra days (this can be adjusted to fit a state's definition of opioid naive)
 ___
 
 | filter           | description                                                                                                                                                                                     |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| naive_end        | calculated field `[rx_end]+60`; replace `60` with the desired `NAIVE_DAYS`; <br />filter start date to the first day from the written date filter in `dispensations_data`, no end date |
+| naive_end        | calculated field `[rx_end]+60`; replace `60` with the desired days; <br />filter start date to the first day from the written date filter in `dispensations_data`, no end date |
 | Filled At        | no start date, filter end date to the last day from the written date filter in `dispensations data`                                                                                           |
 | AHFS Description | opiate agonists, opiate partial agonists                                                                                                                                                        |
 ___
