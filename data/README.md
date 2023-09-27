@@ -64,6 +64,7 @@ ___
 | User ID                  | dimension for identifying the user  |
 | User Full Name           | for adding user name to the results |
 | Associated DEA Number(s) | comma separated list of DEA numbers |
+| State Professional License | license number                    |
 | User Specialty           | final specialty                     |
 | Specialty Level 1        | first level of taxonomy             |
 | Specialty Level 2        | second level of taxonomy            |
