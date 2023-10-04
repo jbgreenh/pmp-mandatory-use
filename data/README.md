@@ -103,7 +103,7 @@ ___
 | filter           | description                                                                                                                                                                                     |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | naive_end        | calculated field `[rx_end]+60`; replace `60` with the desired days; <br />filter start date to the first day from the written date filter in `dispensations_data`, no end date |
-| Filled At        | no start date, filter end date to the last day from the written date filter in `dispensations data`                                                                                           |
+| Filled At        | no start date, filter end date to the last day from the written date filter in `dispensations_data`                                                                                           |
 | AHFS Description | opiate agonists, opiate partial agonists                                                                                                                                                        |
 ___
 | field name                            | description                                        |
