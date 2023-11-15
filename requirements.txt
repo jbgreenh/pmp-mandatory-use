@@ -1,4 +1,4 @@
-polars[all]==0.19.2
+polars[all]==0.19.5
 Levenshtein==0.21.1
 ipykernel==6.25.1
 jupyter==1.0.0
