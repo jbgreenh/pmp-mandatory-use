@@ -15,9 +15,10 @@ filter the data according to state mandatory use requirements
 | AHFS Description         | according to state requirements                                                        |
 | Refill Y/N               | according to state requirements                                                        |
 | Current Prescriber State | state                                                                                  |
-| MY(Written At)           | month(s) for the report, <br />performance improves as fewer months are included |
+| MY(Written At)           | month(s) for the report, <br />performance improves as fewer months are included       |
 | Days Supply              | according to state requirements                                                        |
 | Prescriber PDMP Role     | exclude medical residents with prescriptive authority                                  |  
+| Patient Location         | exclude as neccessary (AZ exludes hospice here)                                        |  
 ___
 | field name                                  | description                                                 |
 |---------------------------------------------|-------------------------------------------------------------|
