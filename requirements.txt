@@ -1,5 +1,5 @@
-polars[all]==0.20.13
-Levenshtein==0.21.1
-ipykernel==6.25.1
+polars==0.20.26
+Levenshtein==0.25.1
+ipykernel==6.29.4
 jupyter==1.0.0
-nbconvert==7.7.3
+nbconvert==7.16.2
