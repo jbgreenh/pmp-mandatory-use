@@ -111,7 +111,7 @@ all active prescriptions for opioids and benzodiazepines
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rx_end           | calculated field `[Filled At]+[Days Supply]`; <br />filter start date to the first day from the written date filter in `dispensations_data`, no end date |
 | Filled At        | no start date, filter end date to the last day from the written date filter in `dispensations_data`                                                      |
-| AHFS Description | opiate agonists, opiate partial agonists, <br />benzodiazepines (anticonvulsants), benzodiazepines (anxiolytic, sedative/hypnotics)                      |
+| AHFS Description | opioid agonists, opioid partial agonists, <br />benzodiazepines (anticonvulsants), benzodiazepines (anxiolytic, sedative/hypnotics)                      |
 
 ---
 
