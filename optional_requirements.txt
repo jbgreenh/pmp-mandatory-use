@@ -1,2 +1,0 @@
-tableauserverclient==0.30
-toml==0.10.2
