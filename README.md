@@ -4,11 +4,8 @@ custom mandatory use compliance module for prescription monitoring programs
 
 ## setup
 
-this notebook has been developed and tested in python3.12
-
-```
-pip install -r requirements.txt
-```
+this project uses [uv](https://github.com/astral-sh/uv?tab=readme-ov-file)  
+after installing `uv` on your system using the link above, use `uv sync` to install all dependencies
 
 ## data
 
