@@ -2,4 +2,4 @@
 **/*.xls
 **/*.csv
 **/*.txt
-**/*.toml
+**/secrets.toml
