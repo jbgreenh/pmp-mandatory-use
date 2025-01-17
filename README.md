@@ -12,7 +12,7 @@ after installing `uv` on your system using the link above, use `uv sync` to inst
 see the [data readme](data/README.md) for more information on the required input data
 
 <details>
-    <summary>Tableau API</summary>
+    <summary>tableau api</summary>
 
 to make use of `tableauserverclient` to have the script pull the data instead of downloading manually:
 
