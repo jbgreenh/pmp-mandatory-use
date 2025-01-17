@@ -11,6 +11,41 @@ after installing `uv` on your system using the link above, use `uv sync` to inst
 
 see the [data readme](data/README.md) for more information on the required input data
 
+<details>
+    <summary>Tableau API</summary>
+
+to make use of `tableauserverclient` to have the script pull the data instead of downloading manually:
+
+1. you will need a `secrets.toml` file in the following format in the root folder of this repo:
+   ```
+   [tableau]
+   server = 'tableau.server.address.com'
+   site = 'insert-sitename'
+   token_name = 'INSERT-YOUR-TOKEN-NAME-HERE'
+   token_value = 'INSERT-YOUR-TABLEAU-API-KEY-HERE'
+   ```
+   you can find your server address and site name from the url you use to access tableau, for example:
+   `https://server.name.here.com/#/site/site_name` the server name would be `https://server.name.here.com` and the site name would be `site_name`
+2. update the workbook in tableau with these 4 parameters (you can set the default values all to the same date for speed in the tableau client, since the `mu` notebook sets these values itself for querying tableau anyway):
+   | parameter | description |
+   |------------------|-------------|
+   | first_of_month | short date |
+   | first_for_search | short date |
+   | last_of_month | short date |
+   | last_for_search | short date |
+3. add the following calculated fields and set them as filters as described:
+   | calculated field | data source | code | description |
+   |--------------------|-----------------|----------------------------------------------------------------------------------------------|--------------------------------------------------------|
+   | between_active | dispensations | [rx_end] >= [first_of_month] and [Filled At] <= [last_of_month] | replace other time based filters in `active_rx` with this set to True |
+   | between_f_l_month | dispensations | [Written At] <= [last_of_month] and [Written At] >= [first_of_month] | replace other time based filters in `dispensations` with this set to True |
+   | between_naive | dispensations | [naive_end] >= [first_of_month] and [Filled At] <= [last_of_month] | replace other time based filters in `naive_rx` with this set to True |
+   | between_for_search | search requests | [Search Creation Date] <= [last_for_search] and [Search Creation Date] >= [first_for_search] | replace other time based filters in `searches` with this set To true |
+4. next, uncomment the imports under `# for using tableau API:`
+5. set `TABLEAU_API` to `True` in the constants section and set `WORKBOOK_NAME` to the name of the workbook you use for mandatory use (view names must match those in the [data readme](data/README.md) without the `_data.csv`).
+6. choose to either use `AUTO_DATE` which will use the full previous month (if today is `May 24, 2024`, written start date will be set to `April 1, 2024` and written end date will be set to `April 30, 2024`) or to set `FIRST_WRITTEN_DATE` and `LAST_WRITTEN_DATE` manually, note that setting these dates too far apart will significantly slow performance and may cause the `tableauserverclient` to time out
+
+</details>
+
 ## settings
 
 the following settings are available in the notebook for easy adjustment
