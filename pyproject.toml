@@ -7,9 +7,9 @@ requires-python = ">=3.13"
 dependencies = [
     "ipykernel>=6.29.5",
     "jupyter>=1.1.1",
-    "levenshtein>=0.26.1",
+    "levenshtein==0.26.1",
     "nbconvert>=7.16.5",
-    "polars>=1.19.0",
-    "tableauserverclient>=0.35",
+    "polars==1.19.0",
+    "tableauserverclient==0.35",
     "toml>=0.10.2",
 ]
