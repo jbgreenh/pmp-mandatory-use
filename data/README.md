@@ -91,6 +91,7 @@ data on pmp database users
 | State Professional License | license number                      |
 | Specialty Level 1          | first level of taxonomy             |
 | Specialty Level 2          | second level of taxonomy            |
+| Specialty Level 3          | third level of taxonomy             |
 
 # supplement
 
