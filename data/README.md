@@ -40,8 +40,8 @@ filter the data according to state mandatory use requirements
 | AHFS Description                             | for distinguishing opioids and benzodiazepines              |
 | Prescriber First Name                        | for when a prescriber is not registered                     |
 | Prescriber Last Name                         | for when a prescriber is not registered                     |
-| Patient First Name                           | for matching with searches                                  |
-| Patient Last Name                            | for matching with searches                                  |
+| Orig Patient First Name                      | for matching with searches                                  |
+| Orig Patient Last Name                       | for matching with searches                                  |
 | Month, Day, Year of Written At               | when the prescription was written                           |
 | Month, Day, Year of Filled At                | when the prescription was filled                            |
 | Month, Day, Year of Dispensations Created At | when the record of the dispensation was reported to the PMP |
@@ -122,8 +122,8 @@ all active prescriptions for opioids and benzodiazepines
 | Prescriber DEA                               | for identifying the prescriber                              |
 | AHFS Description                             | for distinguishing opioids and benzodiazepines              |
 | Month, Day, Year of Patient Birthdate        | for matching with other rx                                  |
-| Patient First Name                           | for matching with other rx                                  |
-| Patient Last Name                            | for matching with other rx                                  |
+| Orig Patient First Name                      | for matching with other rx                                  |
+| Orig Patient Last Name                       | for matching with other rx                                  |
 | Month, Day, Year of Dispensations Created At | when the record of the dispensation was reported to the PMP |
 | Month, Day, Year of Written At               | when the prescription was written                           |
 | Month, Day, Year of Filled At                | when the prescription was filled                            |
@@ -147,7 +147,7 @@ all opioid prescriptions that are active + 60 extra days (this can be adjusted t
 | ------------------------------------- | ------------------------------------------------ |
 | Animal Name                           | for filtering veterinarians                      |
 | Month, Day, Year of Patient Birthdate | for matching with other rx                       |
-| Patient First Name                    | for matching with other rx                       |
-| Patient Last Name                     | for matching with other rx                       |
+| Orig Patient First Name               | for matching with other rx                       |
+| Orig Patient Last Name                | for matching with other rx                       |
 | Month, Day, Year of Filled At         | when the prescription was filled                 |
 | Max. naive_end                        | max `naive_end` when grouped by the above fields |
