@@ -349,8 +349,19 @@ def check_disp_for_search(users, dispensations, searches):
     print('mmes added')
     return results
 
-def supplement(results, first_of_month, last_of_month):
+def supplement(results, first_of_month, last_of_month, users):
     print('adding supplemental information...')
+
+    # each user dea gets its own row so a prescriber gets credit for searches on prescriptions with any of their registered deas
+    users_explode = (
+        users
+        .with_columns(
+            pl.col('dea_number(s)').str.to_uppercase().str.strip_chars().str.split(',').alias('dea_number')
+        )
+        .explode('dea_number')
+        .select('true_id', 'dea_number')
+    )
+
     active = (
         pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
         .rename({
@@ -669,7 +680,7 @@ def main():
 
     users, dispensations, searches = prep_files()
     results = check_disp_for_search(users, dispensations, searches)
-    results = supplement(results, first_of_month, last_of_month)
+    results = supplement(results, first_of_month, last_of_month, users)
     get_results(results, first_of_month, last_of_month)
 
 
