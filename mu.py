@@ -347,9 +347,9 @@ def check_disp_for_search(users, dispensations, searches):
         )
     )
     print('mmes added')
-    return results
+    return results, final_dispensations
 
-def supplement(results, first_of_month, last_of_month, users):
+def supplement(results, first_of_month, last_of_month, final_dispensations, users):
     print('adding supplemental information...')
 
     # each user dea gets its own row so a prescriber gets credit for searches on prescriptions with any of their registered deas
@@ -679,8 +679,8 @@ def main():
         pull_files(first_of_month, last_of_month)
 
     users, dispensations, searches = prep_files()
-    results = check_disp_for_search(users, dispensations, searches)
-    results = supplement(results, first_of_month, last_of_month, users)
+    results, final_dispensations = check_disp_for_search(users, dispensations, searches)
+    results = supplement(results, first_of_month, last_of_month, final_dispensations, users)
     get_results(results, first_of_month, last_of_month)
 
 
