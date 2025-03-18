@@ -637,8 +637,8 @@ def parse_arguments():
     parser.add_argument("--TABLEAU_API", type=bool, default=TABLEAU_API, help="pull tableau files using the api (default: %(default)s)")
     parser.add_argument("--WORKBOOK_NAME", type=str, default=WORKBOOK_NAME, help="workbook name in tableau (default: %(default)s)")
     parser.add_argument("--AUTO_DATE", type=bool, default=AUTO_DATE, help="pull data based on last month (default: %(default)s)")
-    parser.add_argument("--FIRST_WRITTEN_DATE", type=str, default=str(FIRST_WRITTEN_DATE), help="first written date in YYYY-MM-DD format (default: %(default)s)")
-    parser.add_argument("--LAST_WRITTEN_DATE", type=str, default=str(LAST_WRITTEN_DATE), help="last written date in YYYY-MM-DD format (default: %(default)s)")
+    parser.add_argument("--FIRST_WRITTEN_DATE", type=str, default=str(FIRST_WRITTEN_DATE), help="first written date in YYYY-MM-DD format (default: %(default)s) --AUTO_DATE False")
+    parser.add_argument("--LAST_WRITTEN_DATE", type=str, default=str(LAST_WRITTEN_DATE), help="last written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False")
 
     return parser.parse_args()
 
