@@ -1,3 +1,4 @@
+import argparse
 import calendar
 from datetime import date, timedelta
 
@@ -609,8 +610,49 @@ def get_results(results, first_of_month, last_of_month):
     print('complete! stats below:')
     print(stats)
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="configure constants")
+
+    parser.add_argument("--RATIO", type=float, default=RATIO, help="patient name similarity ratio for full search (default: %(default)s)")
+    parser.add_argument("--PARTIAL_RATIO", type=float, default=PARTIAL_RATIO, help="patient name similarity ratio for partial search (default: %(default)s)")
+    parser.add_argument("--DAYS_BEFORE", type=int, default=DAYS_BEFORE, help="max number of days before an rx was written to give credit (default: %(default)s)")
+    parser.add_argument("--FILTER_VETS", type=bool, default=FILTER_VETS, help="remove veterinarians from data (default: %(default)s)")
+    parser.add_argument("--TESTING", type=bool, default=TESTING, help="save progress and detail files (default: %(default)s)")
+    parser.add_argument("--SUPPLEMENT", type=bool, default=SUPPLEMENT, help="add additional information to the results (default: %(default)s)")
+    parser.add_argument("--OVERLAP_RATIO", type=float, default=OVERLAP_RATIO, help="patient name similarity for confirming overlap (default: %(default)s)")
+    parser.add_argument("--OVERLAP_TYPE", type=str, default=OVERLAP_TYPE, help="type of overlap ('last', 'part', 'both') (default: %(default)s)")
+    parser.add_argument("--NAIVE_RATIO", type=float, default=NAIVE_RATIO, help="ratio for opioid naive confirmation (default: %(default)s)")
+    parser.add_argument("--MME_THRESHOLD", type=int, default=MME_THRESHOLD, help="mme threshold for single rx (default: %(default)s)")
+    parser.add_argument("--TABLEAU_API", type=bool, default=TABLEAU_API, help="pull tableau files using the api (default: %(default)s)")
+    parser.add_argument("--WORKBOOK_NAME", type=str, default=WORKBOOK_NAME, help="workbook name in tableau (default: %(default)s)")
+    parser.add_argument("--AUTO_DATE", type=bool, default=AUTO_DATE, help="pull data based on last month (default: %(default)s)")
+    parser.add_argument("--FIRST_WRITTEN_DATE", type=str, default=str(FIRST_WRITTEN_DATE), help="first written date in YYYY-MM-DD format (default: %(default)s)")
+    parser.add_argument("--LAST_WRITTEN_DATE", type=str, default=str(LAST_WRITTEN_DATE), help="last written date in YYYY-MM-DD format (default: %(default)s)")
+
+    return parser.parse_args()
 
 def main():
+    args = parse_arguments()
+
+    global RATIO, PARTIAL_RATIO, DAYS_BEFORE, FILTER_VETS, TESTING, SUPPLEMENT, OVERLAP_RATIO, OVERLAP_TYPE, NAIVE_RATIO
+    global MME_THRESHOLD, TABLEAU_API, WORKBOOK_NAME, AUTO_DATE, FIRST_WRITTEN_DATE, LAST_WRITTEN_DATE
+
+    RATIO = args.RATIO
+    PARTIAL_RATIO = args.PARTIAL_RATIO
+    DAYS_BEFORE = args.DAYS_BEFORE
+    FILTER_VETS = args.FILTER_VETS
+    TESTING = args.TESTING
+    SUPPLEMENT = args.SUPPLEMENT
+    OVERLAP_RATIO = args.OVERLAP_RATIO
+    OVERLAP_TYPE = args.OVERLAP_TYPE
+    NAIVE_RATIO = args.NAIVE_RATIO
+    MME_THRESHOLD = args.MME_THRESHOLD
+    TABLEAU_API = args.TABLEAU_API
+    WORKBOOK_NAME = args.WORKBOOK_NAME
+    AUTO_DATE = args.AUTO_DATE
+    FIRST_WRITTEN_DATE = date.fromisoformat(args.FIRST_WRITTEN_DATE)
+    LAST_WRITTEN_DATE = date.fromisoformat(args.LAST_WRITTEN_DATE)
+
     if AUTO_DATE:
         today = date.today()
         last_of_month = add_days(-1, today.replace(day=1))
