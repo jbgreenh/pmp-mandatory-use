@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 import polars as pl
 from Levenshtein import ratio
@@ -38,7 +38,7 @@ if SUPPLEMENT:
     if OVERLAP_TYPE not in ['last', 'part', 'both']:
         raise Exception(f'{OVERLAP_TYPE} is not one of last, part, both, please set OVERLAP_TYPE accordingly')
 
-def add_days(n, d = datetime.today()):
+def add_days(n:int, d:date = date.today()):
   return d + timedelta(n)
 
 def filter_vets(df):
@@ -136,6 +136,7 @@ if TABLEAU_API:
         csv_from_view_id('naive_rx_data', naive_rx_luid, filters)
         print('wrote data/naive_rx.csv')
 
+print('preparing files...')
 users = (
     pl.scan_csv('data/ID_data.csv', infer_schema_length=10000)
     .rename({
@@ -210,7 +211,9 @@ searches = (
     .drop('first_name', 'last_name', 'partial_first', 'partial_last')
     .lazy()
 )
+print('users, dispensations, searches prepared')
 
+print('comparing dispensations with searches...')
 dispensations_with_searches = (
     dispensations
     .lazy()
@@ -273,11 +276,13 @@ results = (
     )
     .collect()
 )
+print('dispensations checked for searches')
 
 if TESTING:
     results.write_csv('search_results.csv')
     final_dispensations.write_csv('dispensations_results.csv')
 
+print('adding opioid and benzo counts...')
 opi_count = (
     final_dispensations
     .lazy()
@@ -326,8 +331,32 @@ results = (
         pl.col('benzo_rx').fill_null(0)
     )
 )
+print('opioid and benzo counts added')
+
+print('adding mmes over threshold...')
+over_mme = (
+    final_dispensations
+    .select('final_id', 'mme')
+    .filter(
+        pl.col('mme') >= MME_THRESHOLD
+    )
+    .group_by('final_id')
+    .len()
+    .rename({'len':'rx_over_mme_threshold'})
+)
+
+# add count of rx over the mme threshold to the results
+results = (
+    results
+    .join(over_mme, how='left', on='final_id', coalesce=True)
+    .with_columns(
+        pl.col('rx_over_mme_threshold').fill_null(0)
+    )
+)
+print('mmes added')
 
 if SUPPLEMENT:
+    print('adding supplemental information...')
     active = (
         pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
         .rename({
@@ -361,8 +390,8 @@ if SUPPLEMENT:
         )
     )
 
-if SUPPLEMENT:
     if OVERLAP_TYPE in ['part', 'both']:
+        print('processing overlap="part"...')
         overlap_active = (
             benzo_active
             .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
@@ -419,8 +448,10 @@ if SUPPLEMENT:
                 pl.col('overlapping_rx_part').fill_null(0)
             )
         )
+        print('overlap="part" complete')
 
     if OVERLAP_TYPE in ['last', 'both']:
+        print('processing overlap="both"...')
         overlap_active = (
             benzo_active
             .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
@@ -480,28 +511,9 @@ if SUPPLEMENT:
                 pl.col('overlapping_rx_last').fill_null(0)
             )
         )
+        print('overlap="last" processed')
 
-over_mme = (
-    final_dispensations
-    .select('final_id', 'mme')
-    .filter(
-        pl.col('mme') >= MME_THRESHOLD
-    )
-    .group_by('final_id')
-    .len()
-    .rename({'len':'rx_over_mme_threshold'})
-)
-
-# add count of rx over the mme threshold to the results
-results = (
-    results
-    .join(over_mme, how='left', on='final_id', coalesce=True)
-    .with_columns(
-        pl.col('rx_over_mme_threshold').fill_null(0)
-    )
-)
-
-if SUPPLEMENT:
+    print('processing opioid naive...')
     naive = (
         pl.scan_csv('data/naive_rx_data.csv', infer_schema_length=10000)
         .rename({
@@ -518,7 +530,6 @@ if SUPPLEMENT:
 
     naive = filter_vets(naive)
 
-if SUPPLEMENT:
     naive_disps = (
         final_dispensations
         .lazy()
@@ -565,9 +576,10 @@ if SUPPLEMENT:
         .with_columns(
             pl.col('opi_to_opi_naive').fill_null(0)
         )
-
     )
+    print('naive added')
 
+print('processing results and writing files...')
 results = (
     results
     .sort(['searches', 'dispensations'], descending=[False, True])
@@ -599,4 +611,5 @@ stats = (
     .select('dispensations', 'searches', 'rate')
 )
 
+print('complete! stats below:')
 print(stats)
