@@ -13,3 +13,13 @@ dependencies = [
     "tableauserverclient==0.35",
     "toml>=0.10.2",
 ]
+
+[tool.ruff]
+target-version='py313'
+
+[tool.ruff.format]
+quote-style = 'preserve'
+indent-style = 'space'
+
+[tool.basedpyright]
+typeCheckingMode = 'standard'
