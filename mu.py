@@ -9,32 +9,6 @@ from Levenshtein import ratio
 import tableauserverclient as TSC
 import toml
 
-# ----------------
-# constants
-# ----------------
-RATIO = .7              # patient name similarity between rx and search to give search credit
-PARTIAL_RATIO = .5      # patient name similarity between rx and search to give search credit for partial searches
-DAYS_BEFORE = 7         # max number of days before an rx was written where searching should receive credit
-FILTER_VETS = True      # remove veterinarians from the data
-
-TESTING = False         # save progress and detail files such as search_results, dispensations_results, overlaps_active
-# ------------------------------------------------------------------------------------------------------------------------------------
-SUPPLEMENT = True       # add additional information to the results: overlapping dispensations, opioids to opioid naive patients, etc
-
-OVERLAP_RATIO = .9      # patient name similarity between opioid and benzo prescriptions to confirm overlap
-OVERLAP_TYPE = 'last'   # last, part, both; how overlaps are counted, see readme
-NAIVE_RATIO = .7        # patient name similarity between 2 opioid rx to confirm patient is NOT opioid naive
-MME_THRESHOLD = 90      # mme threshold for single rx
-# ------------------------------------------------------------------------------------------------------------------------------------
-TABLEAU_API = False     # pull tableau files using the API, requires a secrets.toml file, see TABAPIREADME.md
-WORKBOOK_NAME = 'mu'    # workbook name in tableau
-AUTO_DATE = True        # pull data based on last month, if False, set the values below:
-FIRST_WRITTEN_DATE = date(2024, 4, 1)
-LAST_WRITTEN_DATE = date(2024, 4, 30)
-# ----------------
-# end of constants
-# ----------------
-
 def add_days(n:int, d:date = date.today()):
   return d + timedelta(n)
 
@@ -53,7 +27,16 @@ def filter_vets(df):
 
     return df
 
-def pull_files(first_of_month, last_of_month):
+def pull_files():
+
+    if AUTO_DATE:
+        today = date.today()
+        last_of_month = add_days(-1, today.replace(day=1))
+        first_of_month = last_of_month.replace(day=1)
+    else:
+        last_of_month = LAST_WRITTEN_DATE
+        first_of_month = FIRST_WRITTEN_DATE
+
     with open('secrets.toml', 'r') as f:
             secrets = toml.load(f)
 
@@ -128,7 +111,7 @@ def pull_files(first_of_month, last_of_month):
         csv_from_view_id('naive_rx_data', naive_rx_luid, filters)
         print('wrote data/naive_rx.csv')
 
-def prep_files():
+def mu():
     print('preparing files...')
     users = (
         pl.scan_csv('data/ID_data.csv', infer_schema_length=10000)
@@ -207,10 +190,8 @@ def prep_files():
         .lazy()
     )
     print('users, dispensations, searches prepared')
-    return (users, dispensations, searches)
 
-def check_disp_for_search(users, dispensations, searches):
-    print('comparing dispensations with searches...')
+    print('checking dispensations for searches...')
     dispensations_with_searches = (
         dispensations
         .lazy()
@@ -351,245 +332,243 @@ def check_disp_for_search(users, dispensations, searches):
         )
     )
     print('mmes added')
-    return results, final_dispensations
 
-def supplement(results, first_of_month, last_of_month, final_dispensations, users):
-    print('adding supplemental information...')
+    if SUPPLEMENT:
+        print('adding supplemental information...')
 
-    # each user dea gets its own row so a prescriber gets credit for searches on prescriptions with any of their registered deas
-    users_explode = (
-        users
-        .with_columns(
-            pl.col('dea_number(s)').str.to_uppercase().str.strip_chars().str.split(',').alias('dea_number')
+        # each user dea gets its own row so a prescriber gets credit for searches on prescriptions with any of their registered deas
+        users_explode = (
+            users
+            .with_columns(
+                pl.col('dea_number(s)').str.to_uppercase().str.strip_chars().str.split(',').alias('dea_number')
+            )
+            .explode('dea_number')
+            .select('true_id', 'dea_number')
         )
-        .explode('dea_number')
-        .select('true_id', 'dea_number')
-    )
 
-    active = (
-        pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
-        .rename({
-            'Month, Day, Year of Patient Birthdate':'dob', 'Month, Day, Year of Filled At':'filled_date',
-            'Month, Day, Year of Dispensations Created At':'create_date', 'Month, Day, Year of Written At':'written_date',
-            'Orig Patient First Name':'patient_first_name', 'Orig Patient Last Name':'patient_last_name', 'Prescriber DEA':'dea',
-            'AHFS Description':'ahfs', 'Month, Day, Year of rx_end':'rx_end', 'Animal Name':'animal_name'
-        })
-        .join(users_explode, how='left', left_on='dea', right_on='dea_number', coalesce=True)
-        .with_columns(
-            pl.col(['filled_date', 'create_date', 'written_date', 'rx_end', 'dob']).str.to_date('%B %d, %Y'),
-            pl.col('true_id').fill_null(pl.col('dea')).alias('final_id'),
-            (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('patient_name'),
+        active = (
+            pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
+            .rename({
+                'Month, Day, Year of Patient Birthdate':'dob', 'Month, Day, Year of Filled At':'filled_date',
+                'Month, Day, Year of Dispensations Created At':'create_date', 'Month, Day, Year of Written At':'written_date',
+                'Orig Patient First Name':'patient_first_name', 'Orig Patient Last Name':'patient_last_name', 'Prescriber DEA':'dea',
+                'AHFS Description':'ahfs', 'Month, Day, Year of rx_end':'rx_end', 'Animal Name':'animal_name'
+            })
+            .join(users_explode, how='left', left_on='dea', right_on='dea_number', coalesce=True)
+            .with_columns(
+                pl.col(['filled_date', 'create_date', 'written_date', 'rx_end', 'dob']).str.to_date('%B %d, %Y'),
+                pl.col('true_id').fill_null(pl.col('dea')).alias('final_id'),
+                (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('patient_name'),
+            )
+            .drop('true_id', 'patient_first_name', 'patient_last_name')
         )
-        .drop('true_id', 'patient_first_name', 'patient_last_name')
-    )
 
-    active = filter_vets(active)
+        active = filter_vets(active)
 
-    benzo_active = (
-        active
-        .filter(
-            pl.col('ahfs').str.contains('BENZO')
-        )
-    )
-
-    opi_active = (
-        active
-        .filter(
-            pl.col('ahfs').str.contains('OPIOID')
-        )
-    )
-
-    if OVERLAP_TYPE in ['part', 'both']:
-        print('processing overlap="part"...')
-        overlap_active = (
-            benzo_active
-            .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
+        benzo_active = (
+            active
             .filter(
-                ((pl.col('written_date_opi').is_between(pl.col('filled_date'), pl.col('rx_end'))) |
-                (pl.col('written_date').is_between(pl.col('filled_date_opi'), pl.col('rx_end_opi'))))
+                pl.col('ahfs').str.contains('BENZO')
+            )
+        )
+
+        opi_active = (
+            active
+            .filter(
+                pl.col('ahfs').str.contains('OPIOID')
+            )
+        )
+
+        if OVERLAP_TYPE in ['part', 'both']:
+            print('processing overlap="part"...')
+            overlap_active = (
+                benzo_active
+                .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
+                .filter(
+                    ((pl.col('written_date_opi').is_between(pl.col('filled_date'), pl.col('rx_end'))) |
+                    (pl.col('written_date').is_between(pl.col('filled_date_opi'), pl.col('rx_end_opi'))))
+                )
+                .with_columns(
+                    pl.struct(['patient_name_opi', 'patient_name'])
+                    .map_elements(lambda x: ratio(x['patient_name_opi'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
+                )
+                .filter(
+                    pl.col('ratio') >= OVERLAP_RATIO
+                )
+                .collect(streaming=True)
+            )
+
+            if TESTING:
+                overlap_active.write_csv('overlaps_part.csv')
+
+            benzo_dispensations_overlap = (
+                overlap_active
+                .filter(
+                    (pl.col('written_date').is_between(first_of_month, last_of_month))
+                )
+                .select('final_id')
+                .group_by('final_id')
+                .len()
+            )
+
+            opi_dispensations_overlap = (
+                overlap_active
+                .filter(
+                    (pl.col('written_date_opi').is_between(first_of_month, last_of_month))
+                )
+                .select('final_id_opi')
+                .rename({'final_id_opi':'final_id'})
+                .group_by('final_id')
+                .len()
+            )
+
+            all_overlaps = (
+                pl.concat([benzo_dispensations_overlap, opi_dispensations_overlap])
+                .group_by('final_id')
+                .sum()
+                .rename({'len':'overlapping_rx_part'})
+            )
+
+            # add count of overlapping rx to the results
+            results = (
+                results
+                .join(all_overlaps, how='left', on='final_id', coalesce=True)
+                .with_columns(
+                    pl.col('overlapping_rx_part').fill_null(0)
+                )
+            )
+            print('overlap="part" complete')
+
+        if OVERLAP_TYPE in ['last', 'both']:
+            print('processing overlap="both"...')
+            overlap_active = (
+                benzo_active
+                .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
+                .filter(
+                    # using create_date + 1 day for start date, adjust for reporting frequency
+                    ((pl.col('written_date_opi').is_between((pl.col('create_date') + pl.duration(days=1)), pl.col('rx_end'))) |
+                    (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi'))))
+                )
+                .with_columns(
+                    pl.struct(['patient_name_opi', 'patient_name'])
+                    .map_elements(lambda x: ratio(x['patient_name_opi'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
+                )
+                .filter(
+                    pl.col('ratio') >= OVERLAP_RATIO
+                )
+                .collect(streaming=True)
+            )
+
+            if TESTING:
+                overlap_active.write_csv('overlaps_last.csv')
+
+            benzo_dispensations_overlap = (
+                overlap_active
+                .filter(
+                    (pl.col('written_date').is_between(first_of_month, last_of_month)) &
+                    (pl.col('written_date') > pl.col('written_date_opi'))
+                )
+                .select('final_id')
+                .group_by('final_id')
+                .len()
+            )
+
+            opi_dispensations_overlap = (
+                overlap_active
+                .filter(
+                    (pl.col('written_date_opi').is_between(first_of_month, last_of_month)) &
+                    (pl.col('written_date') < pl.col('written_date_opi'))
+                )
+                .select('final_id_opi')
+                .rename({'final_id_opi':'final_id'})
+                .group_by('final_id')
+                .len()
+            )
+
+            all_overlaps = (
+                pl.concat([benzo_dispensations_overlap, opi_dispensations_overlap])
+                .group_by('final_id')
+                .sum()
+                .rename({'len':'overlapping_rx_last'})
+            )
+
+            # add count of overlapping rx to the results
+            results = (
+                results
+                .join(all_overlaps, how='left', on='final_id', coalesce=True)
+                .with_columns(
+                    pl.col('overlapping_rx_last').fill_null(0)
+                )
+            )
+            print('overlap="last" processed')
+
+        print('processing opioid naive...')
+        naive = (
+            pl.scan_csv('data/naive_rx_data.csv', infer_schema_length=10000)
+            .rename({
+                'Orig Patient First Name':'patient_first_name', 'Orig Patient Last Name':'patient_last_name', 'Max. naive_end':'naive_end',
+                'Month, Day, Year of Patient Birthdate':'dob', 'Month, Day, Year of Filled At':'naive_filled_date', 'Animal Name':'animal_name'
+            })
+            .with_columns(
+                pl.col(['dob', 'naive_filled_date']).str.to_date('%B %-d, %Y'),
+                pl.col('naive_end').str.to_date('%-m/%-d/%Y'),
+                (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('naive_patient_name')
+            )
+            .drop('patient_first_name', 'patient_last_name')
+        )
+
+        naive = filter_vets(naive)
+
+        naive_disps = (
+            final_dispensations
+            .lazy()
+            .filter(pl.col('ahfs').str.contains('OPIOID'))
+            .join(naive, how='left', left_on='disp_dob', right_on='dob', coalesce=True)
+            .filter(
+                pl.col('written_date').is_between(pl.col('naive_filled_date'), pl.col('naive_end'))
             )
             .with_columns(
-                pl.struct(['patient_name_opi', 'patient_name'])
-                .map_elements(lambda x: ratio(x['patient_name_opi'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
+                pl.struct(['patient_name', 'naive_patient_name'])
+                .map_elements(lambda x: ratio(x['patient_name'], x['naive_patient_name']), return_dtype=pl.Float32).alias('ratio')
             )
             .filter(
-                pl.col('ratio') >= OVERLAP_RATIO
+                pl.col('ratio') >= NAIVE_RATIO
             )
-            .collect(streaming=True)
+            .with_columns(
+                pl.lit(False).alias('opi_naive')
+            )
+            .unique(subset=['final_id', 'rx_number'])
         )
 
-        if TESTING:
-            overlap_active.write_csv('overlaps_part.csv')
-
-        benzo_dispensations_overlap = (
-            overlap_active
+        naive_disps = (
+            final_dispensations
+            .lazy()
+            .join(naive_disps, how='left', on=['final_id', 'rx_number'], coalesce=True)
+            .select('final_id', 'ahfs', 'opi_naive')
+            .with_columns(
+                pl.col('opi_naive').fill_null(True),
+                ((pl.col('ahfs').str.contains('OPIOID')) & pl.col('opi_naive')).fill_null(True).alias('opi_to_opi_naive')
+            )
+            .select('final_id', 'opi_to_opi_naive')
             .filter(
-                (pl.col('written_date').is_between(first_of_month, last_of_month))
+                pl.col('opi_to_opi_naive')
             )
-            .select('final_id')
-            .group_by('final_id')
-            .len()
+            .group_by('final_id').len()
+            .rename({'len':'opi_to_opi_naive'})
+            .collect()
         )
 
-        opi_dispensations_overlap = (
-            overlap_active
-            .filter(
-                (pl.col('written_date_opi').is_between(first_of_month, last_of_month))
-            )
-            .select('final_id_opi')
-            .rename({'final_id_opi':'final_id'})
-            .group_by('final_id')
-            .len()
-        )
-
-        all_overlaps = (
-            pl.concat([benzo_dispensations_overlap, opi_dispensations_overlap])
-            .group_by('final_id')
-            .sum()
-            .rename({'len':'overlapping_rx_part'})
-        )
-
-        # add count of overlapping rx to the results
+        # add number of opioid dispensations to opioid naive patients to results
         results = (
             results
-            .join(all_overlaps, how='left', on='final_id', coalesce=True)
+            .join(naive_disps, how='left', on='final_id', coalesce=True)
             .with_columns(
-                pl.col('overlapping_rx_part').fill_null(0)
+                pl.col('opi_to_opi_naive').fill_null(0)
             )
         )
-        print('overlap="part" complete')
+        print('naive added')
+        print('supplemental information complete')
 
-    if OVERLAP_TYPE in ['last', 'both']:
-        print('processing overlap="both"...')
-        overlap_active = (
-            benzo_active
-            .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
-            .filter(
-                # using create_date + 1 day for start date, adjust for reporting frequency
-                ((pl.col('written_date_opi').is_between((pl.col('create_date') + pl.duration(days=1)), pl.col('rx_end'))) |
-                (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi'))))
-            )
-            .with_columns(
-                pl.struct(['patient_name_opi', 'patient_name'])
-                .map_elements(lambda x: ratio(x['patient_name_opi'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
-            )
-            .filter(
-                pl.col('ratio') >= OVERLAP_RATIO
-            )
-            .collect(streaming=True)
-        )
-
-        if TESTING:
-            overlap_active.write_csv('overlaps_last.csv')
-
-        benzo_dispensations_overlap = (
-            overlap_active
-            .filter(
-                (pl.col('written_date').is_between(first_of_month, last_of_month)) &
-                (pl.col('written_date') > pl.col('written_date_opi'))
-            )
-            .select('final_id')
-            .group_by('final_id')
-            .len()
-        )
-
-        opi_dispensations_overlap = (
-            overlap_active
-            .filter(
-                (pl.col('written_date_opi').is_between(first_of_month, last_of_month)) &
-                (pl.col('written_date') < pl.col('written_date_opi'))
-            )
-            .select('final_id_opi')
-            .rename({'final_id_opi':'final_id'})
-            .group_by('final_id')
-            .len()
-        )
-
-        all_overlaps = (
-            pl.concat([benzo_dispensations_overlap, opi_dispensations_overlap])
-            .group_by('final_id')
-            .sum()
-            .rename({'len':'overlapping_rx_last'})
-        )
-
-        # add count of overlapping rx to the results
-        results = (
-            results
-            .join(all_overlaps, how='left', on='final_id', coalesce=True)
-            .with_columns(
-                pl.col('overlapping_rx_last').fill_null(0)
-            )
-        )
-        print('overlap="last" processed')
-
-    print('processing opioid naive...')
-    naive = (
-        pl.scan_csv('data/naive_rx_data.csv', infer_schema_length=10000)
-        .rename({
-            'Orig Patient First Name':'patient_first_name', 'Orig Patient Last Name':'patient_last_name', 'Max. naive_end':'naive_end',
-            'Month, Day, Year of Patient Birthdate':'dob', 'Month, Day, Year of Filled At':'naive_filled_date', 'Animal Name':'animal_name'
-        })
-        .with_columns(
-            pl.col(['dob', 'naive_filled_date']).str.to_date('%B %-d, %Y'),
-            pl.col('naive_end').str.to_date('%-m/%-d/%Y'),
-            (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('naive_patient_name')
-        )
-        .drop('patient_first_name', 'patient_last_name')
-    )
-
-    naive = filter_vets(naive)
-
-    naive_disps = (
-        final_dispensations
-        .lazy()
-        .filter(pl.col('ahfs').str.contains('OPIOID'))
-        .join(naive, how='left', left_on='disp_dob', right_on='dob', coalesce=True)
-        .filter(
-            pl.col('written_date').is_between(pl.col('naive_filled_date'), pl.col('naive_end'))
-        )
-        .with_columns(
-            pl.struct(['patient_name', 'naive_patient_name'])
-            .map_elements(lambda x: ratio(x['patient_name'], x['naive_patient_name']), return_dtype=pl.Float32).alias('ratio')
-        )
-        .filter(
-            pl.col('ratio') >= NAIVE_RATIO
-        )
-        .with_columns(
-            pl.lit(False).alias('opi_naive')
-        )
-        .unique(subset=['final_id', 'rx_number'])
-    )
-
-    naive_disps = (
-        final_dispensations
-        .lazy()
-        .join(naive_disps, how='left', on=['final_id', 'rx_number'], coalesce=True)
-        .select('final_id', 'ahfs', 'opi_naive')
-        .with_columns(
-            pl.col('opi_naive').fill_null(True),
-            ((pl.col('ahfs').str.contains('OPIOID')) & pl.col('opi_naive')).fill_null(True).alias('opi_to_opi_naive')
-        )
-        .select('final_id', 'opi_to_opi_naive')
-        .filter(
-            pl.col('opi_to_opi_naive')
-        )
-        .group_by('final_id').len()
-        .rename({'len':'opi_to_opi_naive'})
-        .collect()
-    )
-
-    # add number of opioid dispensations to opioid naive patients to results
-    results = (
-        results
-        .join(naive_disps, how='left', on='final_id', coalesce=True)
-        .with_columns(
-            pl.col('opi_to_opi_naive').fill_null(0)
-        )
-    )
-    print('naive added')
-    return results
-
-def get_results(results, first_of_month, last_of_month):
     print('processing results and writing files...')
     results = (
         results
@@ -628,21 +607,21 @@ def get_results(results, first_of_month, last_of_month):
 def parse_arguments():
     parser = argparse.ArgumentParser(description='configure constants')
 
-    parser.add_argument('--r', '--ratio', type=float, default=RATIO, help='patient name similarity ratio for full search (default: %(default)s)')
-    parser.add_argument('--p', '--partial-ratio', type=float, default=PARTIAL_RATIO, help='patient name similarity ratio for partial search (default: %(default)s)')
-    parser.add_argument('--d', '--days-before', type=int, default=DAYS_BEFORE, help='max number of days before an rx was written to give credit (default: %(default)s)')
-    parser.add_argument('--fv', '--filter-vets', type=bool, default=FILTER_VETS, help='remove veterinarians from data (default: %(default)s)')
-    parser.add_argument('--t', '--testing', type=bool, default=TESTING, help='save progress and detail files (default: %(default)s)')
-    parser.add_argument('--s', '--supplement', type=bool, default=SUPPLEMENT, help='add additional information to the results (default: %(default)s)')
-    parser.add_argument('--o', '--overlap-ratio', type=float, default=OVERLAP_RATIO, help='patient name similarity for confirming overlap (default: %(default)s)')
-    parser.add_argument('--ot', '--overlap-type', type=str, choices=['last', 'part', 'both'], default=OVERLAP_TYPE, help='type of overlap (default: %(default)s)')
-    parser.add_argument('--n', '--naive-ratio', type=float, default=NAIVE_RATIO, help='ratio for opioid naive confirmation (default: %(default)s)')
-    parser.add_argument('--m', '--mme-threshold', type=int, default=MME_THRESHOLD, help='mme threshold for single rx (default: %(default)s)')
-    parser.add_argument('--ta', '--tableau-api', type=bool, default=TABLEAU_API, help='pull tableau files using the api (default: %(default)s)')
-    parser.add_argument('--w', '--workbook-name', type=str, default=WORKBOOK_NAME, help='workbook name in tableau (default: %(default)s)')
-    parser.add_argument('--a', '--auto-date', type=bool, default=AUTO_DATE, help='pull data based on last month (default: %(default)s)')
-    parser.add_argument('--f', '--first-written-date', type=str, default=str(FIRST_WRITTEN_DATE), help='first written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
-    parser.add_argument('--l', '--last-written-date', type=str, default=str(LAST_WRITTEN_DATE), help='last written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
+    parser.add_argument('--r', '--ratio', type=float, default=0.7, help='patient name similarity ratio for full search (default: %(default)s)')
+    parser.add_argument('--p', '--partial-ratio', type=float, default=0.5, help='patient name similarity ratio for partial search (default: %(default)s)')
+    parser.add_argument('--d', '--days-before', type=int, default=7, help='max number of days before an rx was written to give credit (default: %(default)s)')
+    parser.add_argument('--fv', '--filter-vets', type=bool, default=True, help='remove veterinarians from data (default: %(default)s)')
+    parser.add_argument('--t', '--testing', type=bool, default=False, help='save progress and detail files (default: %(default)s)')
+    parser.add_argument('--s', '--supplement', type=bool, default=True, help='add additional information to the results (default: %(default)s)')
+    parser.add_argument('--o', '--overlap-ratio', type=float, default=0.9, help='patient name similarity for confirming overlap (default: %(default)s)')
+    parser.add_argument('--ot', '--overlap-type', type=str, default='last', choices=['last', 'part', 'both'], help='type of overlap (default: %(default)s)')
+    parser.add_argument('--n', '--naive-ratio', type=float, default=0.7, help='ratio for opioid naive confirmation (default: %(default)s)')
+    parser.add_argument('--m', '--mme-threshold', type=int, default=90, help='mme threshold for single rx (default: %(default)s)')
+    parser.add_argument('--ta', '--tableau-api', type=bool, default=False, help='pull tableau files using the api (default: %(default)s)')
+    parser.add_argument('--w', '--workbook-name', type=str, default='mu', help='workbook name in tableau (default: %(default)s)')
+    parser.add_argument('--a', '--auto-date', type=bool, default=True, help='pull data from tableau based on last month (default: %(default)s)')
+    parser.add_argument('--f', '--first-written-date', type=str, default=str(date(2024, 4, 1)), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
+    parser.add_argument('--l', '--last-written-date', type=str, default=str(date(2024, 4, 30)), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
 
     return parser.parse_args()
 
@@ -668,23 +647,10 @@ def main():
     FIRST_WRITTEN_DATE = date.fromisoformat(args.f)
     LAST_WRITTEN_DATE = date.fromisoformat(args.l)
 
-    if AUTO_DATE:
-        today = date.today()
-        last_of_month = add_days(-1, today.replace(day=1))
-        first_of_month = last_of_month.replace(day=1)
-    else:
-        last_of_month = LAST_WRITTEN_DATE
-        first_of_month = FIRST_WRITTEN_DATE
-
     if TABLEAU_API:
-        pull_files(first_of_month, last_of_month)
+        pull_files()
 
-    users, dispensations, searches = prep_files()
-    results, final_dispensations = check_disp_for_search(users, dispensations, searches)
-    if SUPPLEMENT:
-        results = supplement(results, first_of_month, last_of_month, final_dispensations, users)
-    get_results(results, first_of_month, last_of_month)
-
+    mu()
 
 if __name__ == '__main__':
     main()
