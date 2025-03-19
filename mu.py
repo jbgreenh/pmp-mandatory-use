@@ -1,13 +1,13 @@
 import argparse
 import calendar
+import time
 from datetime import date, timedelta
 
 import polars as pl
-from Levenshtein import ratio
-
-# for using tableau API:
 import tableauserverclient as TSC
 import toml
+from Levenshtein import ratio
+
 
 def add_days(n:int, d:date = date.today()):
   return d + timedelta(n)
@@ -28,7 +28,7 @@ def filter_vets(df):
     return df
 
 def pull_files():
-
+    t_start = time.perf_counter()
     if AUTO_DATE:
         today = date.today()
         last_of_month = add_days(-1, today.replace(day=1))
@@ -80,12 +80,13 @@ def pull_files():
         print('finding id luid...')
         id_luid = find_view_luid('ID', WORKBOOK_NAME)
         print(id_luid)
-        print('finding active_rx luid...')
-        active_rx_luid = find_view_luid('active_rx', WORKBOOK_NAME)
-        print(active_rx_luid)
-        print('finding naive_rx luid...')
-        naive_rx_luid = find_view_luid('naive_rx', WORKBOOK_NAME)
-        print(naive_rx_luid)
+        if SUPPLEMENT:
+            print('finding active_rx luid...')
+            active_rx_luid = find_view_luid('active_rx', WORKBOOK_NAME)
+            print(active_rx_luid)
+            print('finding naive_rx luid...')
+            naive_rx_luid = find_view_luid('naive_rx', WORKBOOK_NAME)
+            print(naive_rx_luid)
 
         last_for_search = add_days(1, last_of_month)
         first_for_search = add_days(-DAYS_BEFORE, first_of_month)
@@ -104,15 +105,20 @@ def pull_files():
         print('pulling ID_data...')
         csv_from_view_id('ID_data', id_luid, filters)
         print('wrote data/ID_data.csv')
-        print('pulling active_rx...')
-        csv_from_view_id('active_rx_data', active_rx_luid, filters)
-        print('wrote data/active_rx.csv')
-        print('pulling naive_rx...')
-        csv_from_view_id('naive_rx_data', naive_rx_luid, filters)
-        print('wrote data/naive_rx.csv')
+        if SUPPLEMENT:
+            print('pulling active_rx...')
+            csv_from_view_id('active_rx_data', active_rx_luid, filters)
+            print('wrote data/active_rx.csv')
+            print('pulling naive_rx...')
+            csv_from_view_id('naive_rx_data', naive_rx_luid, filters)
+            print('wrote data/naive_rx.csv')
+        t_end = time.perf_counter()
+        t_elapsed = t_end - t_start
+        print(f'files pulled: {t_elapsed:.2f}s')
 
 def mu():
     print('preparing files...')
+    t_start_mu = time.perf_counter()
     users = (
         pl.scan_csv('data/ID_data.csv', infer_schema_length=10000)
         .rename({
@@ -189,9 +195,12 @@ def mu():
         .drop('first_name', 'last_name', 'partial_first', 'partial_last')
         .lazy()
     )
-    print('users, dispensations, searches prepared')
+    t_end_prep = time.perf_counter()
+    t_elapsed_prep = t_end_prep - t_start_mu
+    print(f'users, dispensations, searches prepared: {t_elapsed_prep:2f}s')
 
     print('checking dispensations for searches...')
+    t_start_search = time.perf_counter()
     dispensations_with_searches = (
         dispensations
         .lazy()
@@ -254,13 +263,16 @@ def mu():
         )
         .collect()
     )
-    print('dispensations checked for searches')
+    t_end_search = time.perf_counter()
+    t_elapsed_search = t_end_search - t_start_search
+    print(f'dispensations checked for searches: {t_elapsed_search:2f}')
 
     if TESTING:
         results.write_csv('search_results.csv')
         final_dispensations.write_csv('dispensations_results.csv')
 
     print('adding opioid and benzo counts...')
+    t_start_ob = time.perf_counter()
     opi_count = (
         final_dispensations
         .lazy()
@@ -309,9 +321,12 @@ def mu():
             pl.col('benzo_rx').fill_null(0)
         )
     )
-    print('opioid and benzo counts added')
+    t_end_ob = time.perf_counter()
+    t_elapsed_ob = t_end_ob - t_start_ob
+    print(f'opioid and benzo counts added: {t_elapsed_ob:2f}s')
 
     print('adding mmes over threshold...')
+    t_start_mme = time.perf_counter()
     over_mme = (
         final_dispensations
         .select('final_id', 'mme')
@@ -331,10 +346,13 @@ def mu():
             pl.col('rx_over_mme_threshold').fill_null(0)
         )
     )
-    print('mmes added')
+    t_end_mme = time.perf_counter()
+    t_elapsed_mme = t_end_mme - t_start_mme
+    print(f'mmes added: {t_elapsed_mme:2f}s')
 
     if SUPPLEMENT:
         print('adding supplemental information...')
+        t_start_sup = time.perf_counter()
 
         active = (
             pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
@@ -368,7 +386,11 @@ def mu():
                 pl.col('ahfs').str.contains('OPIOID')
             )
         )
+        t_end_sup_prep = time.perf_counter()
+        t_elapsed_sup_prep = t_end_sup_prep - t_start_sup
+        print(f'supplemental files prep complete: {t_elapsed_sup_prep:2f}s')
 
+        t_start_olap = time.perf_counter()
         if OVERLAP_TYPE in ['part', 'both']:
             print('processing overlap="part"...')
             overlap_active = (
@@ -492,7 +514,12 @@ def mu():
             )
             print('overlap="last" processed')
 
+        t_end_olap = time.perf_counter()
+        t_elapsed_olap = t_end_olap - t_start_olap
+        print(f'overlaps processed: {t_elapsed_olap:2f}s')
+
         print('processing opioid naive...')
+        t_start_naive = time.perf_counter()
         naive = (
             pl.scan_csv('data/naive_rx_data.csv', infer_schema_length=10000)
             .rename({
@@ -556,10 +583,15 @@ def mu():
                 pl.col('opi_to_opi_naive').fill_null(0)
             )
         )
-        print('naive added')
-        print('supplemental information complete')
+        t_end_naive = time.perf_counter()
+        t_elapsed_naive = t_end_naive - t_start_naive
+        print(f'naive processed: {t_elapsed_naive:2f}s')
+        t_end_sup = time.perf_counter()
+        t_elapsed_sup = t_end_sup - t_start_sup
+        print(f'supplemental information complete: {t_elapsed_sup:2f}s')
 
     print('processing results and writing files...')
+    t_start_res = time.perf_counter()
     results = (
         results
         .sort(['searches', 'dispensations'], descending=[False, True])
@@ -591,7 +623,13 @@ def mu():
         .select('dispensations', 'searches', 'rate')
     )
 
-    print('complete! stats below:')
+    t_end_res = time.perf_counter()
+    t_elapsed_res = t_end_res - t_start_res
+    print(f'results complete: {t_elapsed_res:2f}s')
+    t_end_mu = time.perf_counter()
+    t_elapsed_mu = t_end_mu - t_start_mu
+    print(f'mu complete!: {t_elapsed_mu:2f}s')
+    print('stats below:')
     print(stats)
 
 def parse_arguments():
