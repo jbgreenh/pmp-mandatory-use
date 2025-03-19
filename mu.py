@@ -624,21 +624,21 @@ def get_results(results, first_of_month, last_of_month):
 def parse_arguments():
     parser = argparse.ArgumentParser(description='configure constants')
 
-    parser.add_argument('--RATIO', '--ratio', '--r', type=float, default=RATIO, help='patient name similarity ratio for full search (default: %(default)s)')
-    parser.add_argument('--PARTIAL_RATIO', '--partial-ratio', '--pr', type=float, default=PARTIAL_RATIO, help='patient name similarity ratio for partial search (default: %(default)s)')
-    parser.add_argument('--DAYS_BEFORE', '--days-before', '--db', type=int, default=DAYS_BEFORE, help='max number of days before an rx was written to give credit (default: %(default)s)')
-    parser.add_argument('--FILTER_VETS', '--filter-vets', '--fd', type=bool, default=FILTER_VETS, help='remove veterinarians from data (default: %(default)s)')
-    parser.add_argument('--TESTING', '--testing', '--t', type=bool, default=TESTING, help='save progress and detail files (default: %(default)s)')
-    parser.add_argument('--SUPPLEMENT', '--supplement', '--s', type=bool, default=SUPPLEMENT, help='add additional information to the results (default: %(default)s)')
-    parser.add_argument('--OVERLAP_RATIO', '--overlap-ratio', '--or', type=float, default=OVERLAP_RATIO, help='patient name similarity for confirming overlap (default: %(default)s)')
-    parser.add_argument('--OVERLAP_TYPE', '--overlap-type', '--ot', type=str, default=OVERLAP_TYPE, help='type of overlap ("last", "part", "both") (default: %(default)s)')
-    parser.add_argument('--NAIVE_RATIO', '--naive-ratio', '--nr', type=float, default=NAIVE_RATIO, help='ratio for opioid naive confirmation (default: %(default)s)')
-    parser.add_argument('--MME_THRESHOLD', '--mme-threshold', '--mt', type=int, default=MME_THRESHOLD, help='mme threshold for single rx (default: %(default)s)')
-    parser.add_argument('--TABLEAU_API', '--tableau-api', '--ta', type=bool, default=TABLEAU_API, help='pull tableau files using the api (default: %(default)s)')
-    parser.add_argument('--WORKBOOK_NAME', '--workbook-name', '--wn', type=str, default=WORKBOOK_NAME, help='workbook name in tableau (default: %(default)s)')
-    parser.add_argument('--AUTO_DATE', '--auto-date', '--ad', type=bool, default=AUTO_DATE, help='pull data based on last month (default: %(default)s)')
-    parser.add_argument('--FIRST_WRITTEN_DATE', '--first-written-date', '--fwd', type=str, default=str(FIRST_WRITTEN_DATE), help='first written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
-    parser.add_argument('--LAST_WRITTEN_DATE', '--last-written-date', '--lwd', type=str, default=str(LAST_WRITTEN_DATE), help='last written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
+    parser.add_argument('--r', '--ratio', type=float, default=RATIO, help='patient name similarity ratio for full search (default: %(default)s)')
+    parser.add_argument('--p', '--partial-ratio', type=float, default=PARTIAL_RATIO, help='patient name similarity ratio for partial search (default: %(default)s)')
+    parser.add_argument('--d', '--days-before', type=int, default=DAYS_BEFORE, help='max number of days before an rx was written to give credit (default: %(default)s)')
+    parser.add_argument('--fv', '--filter-vets', type=bool, default=FILTER_VETS, help='remove veterinarians from data (default: %(default)s)')
+    parser.add_argument('--t', '--testing', type=bool, default=TESTING, help='save progress and detail files (default: %(default)s)')
+    parser.add_argument('--s', '--supplement', type=bool, default=SUPPLEMENT, help='add additional information to the results (default: %(default)s)')
+    parser.add_argument('--o', '--overlap-ratio', type=float, default=OVERLAP_RATIO, help='patient name similarity for confirming overlap (default: %(default)s)')
+    parser.add_argument('--ot', '--overlap-type', type=str, choices=['last', 'part', 'both'], default=OVERLAP_TYPE, help='type of overlap (default: %(default)s)')
+    parser.add_argument('--n', '--naive-ratio', type=float, default=NAIVE_RATIO, help='ratio for opioid naive confirmation (default: %(default)s)')
+    parser.add_argument('--m', '--mme-threshold', type=int, default=MME_THRESHOLD, help='mme threshold for single rx (default: %(default)s)')
+    parser.add_argument('--ta', '--tableau-api', type=bool, default=TABLEAU_API, help='pull tableau files using the api (default: %(default)s)')
+    parser.add_argument('--w', '--workbook-name', type=str, default=WORKBOOK_NAME, help='workbook name in tableau (default: %(default)s)')
+    parser.add_argument('--a', '--auto-date', type=bool, default=AUTO_DATE, help='pull data based on last month (default: %(default)s)')
+    parser.add_argument('--f', '--first-written-date', type=str, default=str(FIRST_WRITTEN_DATE), help='first written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
+    parser.add_argument('--l', '--last-written-date', type=str, default=str(LAST_WRITTEN_DATE), help='last written date in YYYY-MM-DD format (default: %(default)s) only used if --AUTO_DATE False')
 
     return parser.parse_args()
 
@@ -648,21 +648,21 @@ def main():
     global RATIO, PARTIAL_RATIO, DAYS_BEFORE, FILTER_VETS, TESTING, SUPPLEMENT, OVERLAP_RATIO, OVERLAP_TYPE, NAIVE_RATIO
     global MME_THRESHOLD, TABLEAU_API, WORKBOOK_NAME, AUTO_DATE, FIRST_WRITTEN_DATE, LAST_WRITTEN_DATE
 
-    RATIO = args.RATIO
-    PARTIAL_RATIO = args.PARTIAL_RATIO
-    DAYS_BEFORE = args.DAYS_BEFORE
-    FILTER_VETS = args.FILTER_VETS
-    TESTING = args.TESTING
-    SUPPLEMENT = args.SUPPLEMENT
-    OVERLAP_RATIO = args.OVERLAP_RATIO
-    OVERLAP_TYPE = args.OVERLAP_TYPE
-    NAIVE_RATIO = args.NAIVE_RATIO
-    MME_THRESHOLD = args.MME_THRESHOLD
-    TABLEAU_API = args.TABLEAU_API
-    WORKBOOK_NAME = args.WORKBOOK_NAME
-    AUTO_DATE = args.AUTO_DATE
-    FIRST_WRITTEN_DATE = date.fromisoformat(args.FIRST_WRITTEN_DATE)
-    LAST_WRITTEN_DATE = date.fromisoformat(args.LAST_WRITTEN_DATE)
+    RATIO = args.r
+    PARTIAL_RATIO = args.p
+    DAYS_BEFORE = args.d
+    FILTER_VETS = args.fv
+    TESTING = args.t
+    SUPPLEMENT = args.s
+    OVERLAP_RATIO = args.o
+    OVERLAP_TYPE = args.ot
+    NAIVE_RATIO = args.n
+    MME_THRESHOLD = args.m
+    TABLEAU_API = args.ta
+    WORKBOOK_NAME = args.w
+    AUTO_DATE = args.a
+    FIRST_WRITTEN_DATE = date.fromisoformat(args.f)
+    LAST_WRITTEN_DATE = date.fromisoformat(args.l)
 
     if AUTO_DATE:
         today = date.today()
@@ -671,9 +671,6 @@ def main():
     else:
         last_of_month = LAST_WRITTEN_DATE
         first_of_month = FIRST_WRITTEN_DATE
-    if SUPPLEMENT:
-        if OVERLAP_TYPE not in ['last', 'part', 'both']:
-            raise Exception(f'{OVERLAP_TYPE} is not one of last, part, both, please set OVERLAP_TYPE accordingly')
 
     if TABLEAU_API:
         pull_files(first_of_month, last_of_month)
