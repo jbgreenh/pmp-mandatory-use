@@ -681,7 +681,8 @@ def main():
 
     users, dispensations, searches = prep_files()
     results, final_dispensations = check_disp_for_search(users, dispensations, searches)
-    results = supplement(results, first_of_month, last_of_month, final_dispensations, users)
+    if SUPPLEMENT:
+        results = supplement(results, first_of_month, last_of_month, final_dispensations, users)
     get_results(results, first_of_month, last_of_month)
 
 
