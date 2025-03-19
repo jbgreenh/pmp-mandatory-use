@@ -336,16 +336,6 @@ def mu():
     if SUPPLEMENT:
         print('adding supplemental information...')
 
-        # each user dea gets its own row so a prescriber gets credit for searches on prescriptions with any of their registered deas
-        users_explode = (
-            users
-            .with_columns(
-                pl.col('dea_number(s)').str.to_uppercase().str.strip_chars().str.split(',').alias('dea_number')
-            )
-            .explode('dea_number')
-            .select('true_id', 'dea_number')
-        )
-
         active = (
             pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
             .rename({
