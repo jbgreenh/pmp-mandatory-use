@@ -83,6 +83,8 @@ def pull_files(first_of_month, last_of_month):
         tableau_server.workbooks.populate_views(searched_workbook)
         views = searched_workbook.views
         searched_view = [view for view in views if view.name==view_name][0]
+        if searched_view.id is None:
+            raise Exception(f'luid for {view_name} in {workbook_name} not found')
         return searched_view.id
 
     with tableau_server.auth.sign_in(tableau_auth):
@@ -178,6 +180,8 @@ def prep_files():
     #for filtering searches to only the days we could potentially need
     first_of_month = dispensations['written_date'].min()
     last_of_month = dispensations['written_date'].max()
+    assert first_of_month is date, 'minimum of written_date should be a date'
+    assert last_of_month is date, 'maximum of written_date should be a date'
     min_date = add_days(-DAYS_BEFORE, first_of_month)
     max_date = add_days(1, last_of_month)
 
