@@ -38,6 +38,8 @@ def pull_files():
         last_of_month = LAST_WRITTEN_DATE
         first_of_month = FIRST_WRITTEN_DATE
 
+    print(f'pulling files using written dates from {str(first_of_month)} to {str(last_of_month)}...')
+
     load_dotenv()
 
     server = os.environ.get('TABLEAU_SERVER')
@@ -81,22 +83,17 @@ def pull_files():
         return searched_view.id
 
     with tableau_server.auth.sign_in(tableau_auth):
-        print('finding dispensations luid...')
+        print('finding luids...')
+        t_start_l = time.perf_counter()
         disp_luid = find_view_luid('dispensations', WORKBOOK_NAME)
-        print(disp_luid)
-        print('finding searches luid...')
         searches_luid = find_view_luid('searches', WORKBOOK_NAME)
-        print(searches_luid)
-        print('finding id luid...')
         id_luid = find_view_luid('ID', WORKBOOK_NAME)
-        print(id_luid)
         if SUPPLEMENT:
-            print('finding active_rx luid...')
             active_rx_luid = find_view_luid('active_rx', WORKBOOK_NAME)
-            print(active_rx_luid)
-            print('finding naive_rx luid...')
             naive_rx_luid = find_view_luid('naive_rx', WORKBOOK_NAME)
-            print(naive_rx_luid)
+        t_end_l = time.perf_counter()
+        t_elapsed_l = t_end_l - t_start_l
+        print(f'luids pulled: {t_elapsed_l:.2f}s')
 
         last_for_search = add_days(1, last_of_month)
         first_for_search = add_days(-DAYS_BEFORE, first_of_month)
@@ -107,21 +104,36 @@ def pull_files():
         }
 
         print('pulling dispensations_data...')
+        t_start_pull_d = time.perf_counter()
         csv_from_view_id('dispensations_data', disp_luid, filters)
-        print('wrote data/dispensations_data.csv')
+        t_end_pull_d = time.perf_counter()
+        t_elapsed_pull_d = t_end_pull_d - t_start_pull_d
+        print(f'pulled and wrote data/dispensations_data.csv: {t_elapsed_pull_d:.2f}s')
         print('pulling searches_data...')
+        t_start_pull_s = time.perf_counter()
         csv_from_view_id('searches_data', searches_luid, filters)
-        print('wrote data/searches_data.csv')
+        t_end_pull_s = time.perf_counter()
+        t_elapsed_pull_s = t_end_pull_s - t_start_pull_s
+        print(f'pulled and wrote data/searches_data.csv: {t_elapsed_pull_s:.2f}s')
         print('pulling ID_data...')
+        t_start_pull_i = time.perf_counter()
         csv_from_view_id('ID_data', id_luid, filters)
-        print('wrote data/ID_data.csv')
+        t_end_pull_i = time.perf_counter()
+        t_elapsed_pull_i = t_end_pull_i - t_start_pull_i
+        print(f'pulled and wrote data/ID_data.csv: {t_elapsed_pull_i:.2f}s')
         if SUPPLEMENT:
             print('pulling active_rx...')
+            t_start_pull_a = time.perf_counter()
             csv_from_view_id('active_rx_data', active_rx_luid, filters)
-            print('wrote data/active_rx.csv')
+            t_end_pull_a = time.perf_counter()
+            t_elapsed_pull_a = t_end_pull_a - t_start_pull_a
+            print(f'pulled and wrote data/active_rx_data.csv: {t_elapsed_pull_a:.2f}s')
             print('pulling naive_rx...')
+            t_start_pull_n = time.perf_counter()
             csv_from_view_id('naive_rx_data', naive_rx_luid, filters)
-            print('wrote data/naive_rx.csv')
+            t_end_pull_n = time.perf_counter()
+            t_elapsed_pull_n = t_end_pull_n - t_start_pull_n
+            print(f'pulled and wrote data/naive_rx_data.csv: {t_elapsed_pull_n:.2f}s')
         t_end = time.perf_counter()
         t_elapsed = t_end - t_start
         print(f'files pulled: {t_elapsed:.2f}s')
@@ -179,8 +191,8 @@ def mu():
     #for filtering searches to only the days we could potentially need
     first_of_month = dispensations['written_date'].min()
     last_of_month = dispensations['written_date'].max()
-    assert first_of_month is date, 'minimum of written_date should be a date'
-    assert last_of_month is date, 'maximum of written_date should be a date'
+    assert isinstance(first_of_month, date), 'minimum of written_date should be a date'
+    assert isinstance(last_of_month, date), 'maximum of written_date should be a date'
     min_date = add_days(-DAYS_BEFORE, first_of_month)
     max_date = add_days(1, last_of_month)
 
@@ -275,7 +287,7 @@ def mu():
     )
     t_end_search = time.perf_counter()
     t_elapsed_search = t_end_search - t_start_search
-    print(f'dispensations checked for searches: {t_elapsed_search:2f}')
+    print(f'dispensations checked for searches: {t_elapsed_search:2f}s')
 
     if TESTING:
         results.write_csv('search_results.csv')
@@ -657,9 +669,9 @@ def parse_arguments():
     parser.add_argument('--m', '--mme-threshold', type=int, default=90, help='mme threshold for single rx (default: %(default)s)')
     parser.add_argument('--ta', '--tableau-api', action='store_true', help='pull tableau files using the api')
     parser.add_argument('--w', '--workbook-name', type=str, default='mu', help='workbook name in tableau (default: %(default)s) only used if using --tableau-api')
-    parser.add_argument('--a', '--auto-date', type=bool, default=True, help='pull data based on last month (default: %(default)s) only used if using --tableau-api')
-    parser.add_argument('--f', '--first-written-date', type=str, default=str(date(2024, 4, 1)), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --auto-date False')
-    parser.add_argument('--l', '--last-written-date', type=str, default=str(date(2024, 4, 30)), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --auto-date False')
+    parser.add_argument('--na', '--no-auto-date', action='store_false', help='pull data based on last month only used if using --tableau-api')
+    parser.add_argument('--f', '--first-written-date', type=str, default=str(date(2024, 4, 1)), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
+    parser.add_argument('--l', '--last-written-date', type=str, default=str(date(2024, 4, 30)), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
 
     return parser.parse_args()
 
@@ -681,7 +693,7 @@ def main():
     MME_THRESHOLD = args.m
     TABLEAU_API = args.ta
     WORKBOOK_NAME = args.w
-    AUTO_DATE = args.a
+    AUTO_DATE = args.na
     FIRST_WRITTEN_DATE = date.fromisoformat(args.f)
     LAST_WRITTEN_DATE = date.fromisoformat(args.l)
 
