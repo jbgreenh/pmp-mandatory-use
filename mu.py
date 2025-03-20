@@ -219,7 +219,7 @@ def mu():
     )
     t_end_prep = time.perf_counter()
     t_elapsed_prep = t_end_prep - t_start_mu
-    print(f'users, dispensations, searches prepared: {t_elapsed_prep:2f}s')
+    print(f'users, dispensations, searches prepared: {t_elapsed_prep:.2f}s')
 
     print('checking dispensations for searches...')
     t_start_search = time.perf_counter()
@@ -287,7 +287,7 @@ def mu():
     )
     t_end_search = time.perf_counter()
     t_elapsed_search = t_end_search - t_start_search
-    print(f'dispensations checked for searches: {t_elapsed_search:2f}s')
+    print(f'dispensations checked for searches: {t_elapsed_search:.2f}s')
 
     if TESTING:
         results.write_csv('search_results.csv')
@@ -345,7 +345,7 @@ def mu():
     )
     t_end_ob = time.perf_counter()
     t_elapsed_ob = t_end_ob - t_start_ob
-    print(f'opioid and benzo counts added: {t_elapsed_ob:2f}s')
+    print(f'opioid and benzo counts added: {t_elapsed_ob:.2f}s')
 
     print('adding mmes over threshold...')
     t_start_mme = time.perf_counter()
@@ -370,7 +370,7 @@ def mu():
     )
     t_end_mme = time.perf_counter()
     t_elapsed_mme = t_end_mme - t_start_mme
-    print(f'mmes added: {t_elapsed_mme:2f}s')
+    print(f'mmes added: {t_elapsed_mme:.2f}s')
 
     if SUPPLEMENT:
         print('adding supplemental information...')
@@ -410,7 +410,7 @@ def mu():
         )
         t_end_sup_prep = time.perf_counter()
         t_elapsed_sup_prep = t_end_sup_prep - t_start_sup
-        print(f'supplemental files prep complete: {t_elapsed_sup_prep:2f}s')
+        print(f'supplemental files prep complete: {t_elapsed_sup_prep:.2f}s')
 
         t_start_olap = time.perf_counter()
         if OVERLAP_TYPE in ['part', 'both']:
@@ -538,7 +538,7 @@ def mu():
 
         t_end_olap = time.perf_counter()
         t_elapsed_olap = t_end_olap - t_start_olap
-        print(f'overlaps processed: {t_elapsed_olap:2f}s')
+        print(f'overlaps processed: {t_elapsed_olap:.2f}s')
 
         print('processing opioid naive...')
         t_start_naive = time.perf_counter()
@@ -607,10 +607,10 @@ def mu():
         )
         t_end_naive = time.perf_counter()
         t_elapsed_naive = t_end_naive - t_start_naive
-        print(f'naive processed: {t_elapsed_naive:2f}s')
+        print(f'naive processed: {t_elapsed_naive:.2f}s')
         t_end_sup = time.perf_counter()
         t_elapsed_sup = t_end_sup - t_start_sup
-        print(f'supplemental information complete: {t_elapsed_sup:2f}s')
+        print(f'supplemental information complete: {t_elapsed_sup:.2f}s')
 
     print('processing results and writing files...')
     t_start_res = time.perf_counter()
@@ -647,10 +647,10 @@ def mu():
 
     t_end_res = time.perf_counter()
     t_elapsed_res = t_end_res - t_start_res
-    print(f'results complete: {t_elapsed_res:2f}s')
+    print(f'results complete: {t_elapsed_res:.2f}s')
     t_end_mu = time.perf_counter()
     t_elapsed_mu = t_end_mu - t_start_mu
-    print(f'mu complete!: {t_elapsed_mu:2f}s')
+    print(f'mu complete!: {t_elapsed_mu:.2f}s')
     print('stats below:')
     print(stats)
 
