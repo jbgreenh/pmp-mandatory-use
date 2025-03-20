@@ -1,11 +1,12 @@
 import argparse
 import calendar
 import time
+import os
 from datetime import date, timedelta
 
+from dotenv import load_dotenv
 import polars as pl
 import tableauserverclient as TSC
-import toml
 from Levenshtein import ratio
 
 
@@ -37,13 +38,22 @@ def pull_files():
         last_of_month = LAST_WRITTEN_DATE
         first_of_month = FIRST_WRITTEN_DATE
 
-    with open('secrets.toml', 'r') as f:
-            secrets = toml.load(f)
+    load_dotenv()
 
-    server = secrets['tableau']['server']
-    site = secrets['tableau']['site']
-    token_name = secrets['tableau']['token_name']
-    token_value = secrets['tableau']['token_value']
+    server = os.environ.get('TABLEAU_SERVER')
+    site = os.environ.get('TABLEAU_SITE')
+    token_name = os.environ.get('TABLEAU_TOKEN_NAME')
+    token_value = os.environ.get('TABLEAU_TOKEN_VALUE')
+
+    missing_tab_vars = [var for var, value in {
+        'TABLEAU_SERVER':server,
+        'TABLEAU_SITE':site,
+        'TABLEAU_TOKEN_NAME':token_name,
+        'TABLEAU_TOKEN_VALUE':token_value,
+    }.items() if value is None]
+
+    if missing_tab_vars:
+        raise Exception(f".env file missing required variable(s): {', '.join(missing_tab_vars)}")
 
     tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site)
     tableau_server = TSC.Server(server, use_server_version=True, http_options={'verify':False})
