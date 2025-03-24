@@ -414,7 +414,7 @@ def mu():
 
         t_start_olap = time.perf_counter()
         if OVERLAP_TYPE in ['part', 'both']:
-            print('processing overlap="part"...')
+            print('processing --overlap-type part...')
             overlap_active = (
                 benzo_active
                 .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
@@ -474,7 +474,7 @@ def mu():
             print('overlap="part" complete')
 
         if OVERLAP_TYPE in ['last', 'both']:
-            print('processing overlap="both"...')
+            print('processing --overlap-type last...')
             overlap_active = (
                 benzo_active
                 .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
