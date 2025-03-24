@@ -471,7 +471,7 @@ def mu():
                     pl.col('overlapping_rx_part').fill_null(0)
                 )
             )
-            print('overlap="part" complete')
+            print('--overlap-type part complete')
 
         if OVERLAP_TYPE in ['last', 'both']:
             print('processing --overlap-type last...')
@@ -534,7 +534,7 @@ def mu():
                     pl.col('overlapping_rx_last').fill_null(0)
                 )
             )
-            print('overlap="last" processed')
+            print('--overlap-type last complete')
 
         t_end_olap = time.perf_counter()
         t_elapsed_olap = t_end_olap - t_start_olap
