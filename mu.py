@@ -691,13 +691,12 @@ def main():
     OVERLAP_TYPE = args.overlap_type
     NAIVE_RATIO = args.naive_ratio
     MME_THRESHOLD = args.mme_threshold
-    TABLEAU_API = args.tableau_api
     WORKBOOK_NAME = args.workbook_name
     AUTO_DATE = args.no_auto_date
     FIRST_WRITTEN_DATE = date.fromisoformat(args.first_written_date)
     LAST_WRITTEN_DATE = date.fromisoformat(args.last_written_date)
 
-    if TABLEAU_API:
+    if args.tableau_api:
         pull_files()
 
     mu()
