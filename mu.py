@@ -657,21 +657,21 @@ def mu():
 def parse_arguments():
     parser = argparse.ArgumentParser(description='configure constants')
 
-    parser.add_argument('--r', '--ratio', type=float, default=0.7, help='patient name similarity ratio for full search (default: %(default)s)')
-    parser.add_argument('--p', '--partial-ratio', type=float, default=0.5, help='patient name similarity ratio for partial search (default: %(default)s)')
-    parser.add_argument('--d', '--days-before', type=int, default=7, help='max number of days before an rx was written to give credit for a search (default: %(default)s)')
-    parser.add_argument('--nf', '--no-filter-vets', action='store_false', help='do not remove veterinarians from data')
-    parser.add_argument('--t', '--testing', action='store_true', help='save progress and detail files')
-    parser.add_argument('--ns', '--no-supplement', action='store_false', help='do not add additional information to the results')
-    parser.add_argument('--o', '--overlap-ratio', type=float, default=0.9, help='patient name similarity for confirming overlap (default: %(default)s) only used if using --supplement')
-    parser.add_argument('--ot', '--overlap-type', type=str, default='last', choices=['last', 'part', 'both'], help='type of overlap (default: %(default)s) only used if using --supplement')
-    parser.add_argument('--n', '--naive-ratio', type=float, default=0.7, help='ratio for opioid naive confirmation (default: %(default)s) only used if using --supplement')
-    parser.add_argument('--m', '--mme-threshold', type=int, default=90, help='mme threshold for single rx (default: %(default)s)')
-    parser.add_argument('--ta', '--tableau-api', action='store_true', help='pull tableau files using the api')
-    parser.add_argument('--w', '--workbook-name', type=str, default='mu', help='workbook name in tableau (default: %(default)s) only used if using --tableau-api')
-    parser.add_argument('--na', '--no-auto-date', action='store_false', help='pull data based on last month only used if using --tableau-api')
-    parser.add_argument('--f', '--first-written-date', type=str, default=str(date(2024, 4, 1)), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
-    parser.add_argument('--l', '--last-written-date', type=str, default=str(date(2024, 4, 30)), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
+    parser.add_argument('-r', '--ratio', type=float, default=0.7, help='patient name similarity ratio for full search (default: %(default)s)')
+    parser.add_argument('-p', '--partial-ratio', type=float, default=0.5, help='patient name similarity ratio for partial search (default: %(default)s)')
+    parser.add_argument('-d', '--days-before', type=int, default=7, help='max number of days before an rx was written to give credit for a search (default: %(default)s)')
+    parser.add_argument('-nf', '--no-filter-vets', action='store_false', help='do not remove veterinarians from data')
+    parser.add_argument('-t', '--testing', action='store_true', help='save progress and detail files')
+    parser.add_argument('-ns', '--no-supplement', action='store_false', help='do not add additional information to the results')
+    parser.add_argument('-o', '--overlap-ratio', type=float, default=0.9, help='patient name similarity for confirming overlap (default: %(default)s) only used if using --supplement')
+    parser.add_argument('-ot', '--overlap-type', type=str, default='last', choices=['last', 'part', 'both'], help='type of overlap (default: %(default)s) only used if using --supplement')
+    parser.add_argument('-n', '--naive-ratio', type=float, default=0.7, help='ratio for opioid naive confirmation (default: %(default)s) only used if using --supplement')
+    parser.add_argument('-m', '--mme-threshold', type=int, default=90, help='mme threshold for single rx (default: %(default)s)')
+    parser.add_argument('-ta', '--tableau-api', action='store_true', help='pull tableau files using the api')
+    parser.add_argument('-w', '--workbook-name', type=str, default='mu', help='workbook name in tableau (default: %(default)s) only used if using --tableau-api')
+    parser.add_argument('-na', '--no-auto-date', action='store_false', help='pull data based on last month only used if using --tableau-api')
+    parser.add_argument('-f', '--first-written-date', type=str, default=str(date(2024, 4, 1)), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
+    parser.add_argument('-l', '--last-written-date', type=str, default=str(date(2024, 4, 30)), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
 
     return parser.parse_args()
 
@@ -681,21 +681,21 @@ def main():
     global RATIO, PARTIAL_RATIO, DAYS_BEFORE, FILTER_VETS, TESTING, SUPPLEMENT, OVERLAP_RATIO, OVERLAP_TYPE, NAIVE_RATIO
     global MME_THRESHOLD, TABLEAU_API, WORKBOOK_NAME, AUTO_DATE, FIRST_WRITTEN_DATE, LAST_WRITTEN_DATE
 
-    RATIO = args.r
-    PARTIAL_RATIO = args.p
-    DAYS_BEFORE = args.d
-    FILTER_VETS = args.nf
-    TESTING = args.t
-    SUPPLEMENT = args.ns
-    OVERLAP_RATIO = args.o
-    OVERLAP_TYPE = args.ot
-    NAIVE_RATIO = args.n
-    MME_THRESHOLD = args.m
-    TABLEAU_API = args.ta
-    WORKBOOK_NAME = args.w
-    AUTO_DATE = args.na
-    FIRST_WRITTEN_DATE = date.fromisoformat(args.f)
-    LAST_WRITTEN_DATE = date.fromisoformat(args.l)
+    RATIO = args.ratio
+    PARTIAL_RATIO = args.partial_ratio
+    DAYS_BEFORE = args.days_before
+    FILTER_VETS = args.no_filter_vets
+    TESTING = args.testing
+    SUPPLEMENT = args.no_supplement
+    OVERLAP_RATIO = args.overlap_ratio
+    OVERLAP_TYPE = args.overlap_type
+    NAIVE_RATIO = args.naive_ratio
+    MME_THRESHOLD = args.mme_threshold
+    TABLEAU_API = args.tableau_api
+    WORKBOOK_NAME = args.workbook_name
+    AUTO_DATE = args.no_auto_date
+    FIRST_WRITTEN_DATE = date.fromisoformat(args.first_written_date)
+    LAST_WRITTEN_DATE = date.fromisoformat(args.last_written_date)
 
     if TABLEAU_API:
         pull_files()
