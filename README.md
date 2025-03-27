@@ -5,7 +5,7 @@ custom mandatory use compliance module for prescription monitoring programs
 ## setup
 
 this project uses [uv](https://github.com/astral-sh/uv?tab=readme-ov-file)  
-after installing `uv` on your system using the link above, you can run the script using `uv run mu.py`
+after installing `uv` on your system using the link above and following adding the input data (see below), you can run the script using `uv run mu.py`
 
 ## data
 
