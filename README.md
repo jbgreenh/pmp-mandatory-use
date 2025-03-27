@@ -5,7 +5,7 @@ custom mandatory use compliance module for prescription monitoring programs
 ## setup
 
 this project uses [uv](https://github.com/astral-sh/uv?tab=readme-ov-file)  
-after installing `uv` on your system using the link above, use `uv sync` to install all dependencies
+after installing `uv` on your system using the link above, you can run the script using `uv run mu.py`
 
 ## data
 
@@ -16,17 +16,16 @@ see the [data readme](data/README.md) for more information on the required input
 
 to make use of `tableauserverclient` to have the script pull the data instead of downloading manually:
 
-1. you will need a `secrets.toml` file in the following format in the root folder of this repo:
+1. you will need a `.env` file in the following format in the root folder of this repo:
    ```
-   [tableau]
-   server = 'tableau.server.address.com'
-   site = 'insert-sitename'
-   token_name = 'INSERT-YOUR-TOKEN-NAME-HERE'
-   token_value = 'INSERT-YOUR-TABLEAU-API-KEY-HERE'
+   TABLEAU_SERVER='tableau.server.address.com'
+   TABLEAU_SITE='insert-sitename'
+   TABLEAU_TOKEN_NAME='INSERT-YOUR-TOKEN-NAME-HERE'
+   TABLEAU_TOKEN_VALUE='INSERT-YOUR-TABLEAU-API-KEY-HERE'
    ```
    you can find your server address and site name from the url you use to access tableau, for example:
    `https://server.name.here.com/#/site/site_name` the server name would be `https://server.name.here.com` and the site name would be `site_name`
-2. update the workbook in tableau with these 4 parameters (you can set the default values all to the same date for speed in the tableau client, since the `mu` notebook sets these values itself for querying tableau anyway):
+2. update the workbooks in tableau with these 4 parameters (you can set the default values all to the same date for speed in the tableau client, since the `mu` notebook sets these values itself for querying tableau anyway):
    | parameter | description |
    |------------------|-------------|
    | first_of_month | short date |
@@ -40,37 +39,77 @@ to make use of `tableauserverclient` to have the script pull the data instead of
    | between_f_l_month | dispensations | [Written At] <= [last_of_month] and [Written At] >= [first_of_month] | replace other time based filters in `dispensations` with this set to True |
    | between_naive | dispensations | [naive_end] >= [first_of_month] and [Filled At] <= [last_of_month] | replace other time based filters in `naive_rx` with this set to True |
    | between_for_search | search requests | [Search Creation Date] <= [last_for_search] and [Search Creation Date] >= [first_for_search] | replace other time based filters in `searches` with this set To true |
-4. next, uncomment the imports under `# for using tableau API:`
-5. set `TABLEAU_API` to `True` in the constants section and set `WORKBOOK_NAME` to the name of the workbook you use for mandatory use (view names must match those in the [data readme](data/README.md) without the `_data.csv`).
-6. choose to either use `AUTO_DATE` which will use the full previous month (if today is `May 24, 2024`, written start date will be set to `April 1, 2024` and written end date will be set to `April 30, 2024`) or to set `FIRST_WRITTEN_DATE` and `LAST_WRITTEN_DATE` manually, note that setting these dates too far apart will significantly slow performance and may cause the `tableauserverclient` to time out
+4. use `--tableau-api` or `-ta` when running `mu.py`, if you use a different name than `mu` for the workbook you use for mandatory use in tableau, set the workbook name using `--workbook-name name` `-w name` (view names must match those in the [data readme](data/README.md) without the `_data.csv`).
+5. the script automatically chooses dates, using the full previous month (if today is `May 24, 2024`, written start date will be set to `April 1, 2024` and written end date will be set to `April 30, 2024`)
+6. to set custom start and end dates, use `--no-auto-date` or `-na` to turn off auto-dates, `--first-written-date` or `-f` to set the first written date and `--last-written-date` or `-l` to set the last written date
+7. for example, to run the script for the month of January 2021, use `uv run mu.py -ta -na -f 2021-01-01 -l 2021-01-31`; note that setting longer date ranges will drastically effect performance, as well as risk timing out the `tableauserverclient`
 
 </details>
 
 ## settings
 
-the following settings are available in the notebook for easy adjustment
+a variety of settings are available for customizing how the data is processed  
+use `uv run mu.py -h` to see the available settings and their defaults:
 
-```python
-RATIO = .7              # patient name similarity between rx and search to give search credit
-PARTIAL_RATIO = .5      # patient name similarity between rx and search to give search credit for partial searches
-DAYS_BEFORE = 7         # max number of days before an rx was written where searching should receive credit
-FILTER_VETS = True      # remove veterinarians from the data
+<details>
+    <summary>help output</summary>
 
-TESTING = False         # save progress and detail files such as search_results, dispensations_results, overlaps_active
-# ------------------------------------------------------------------------------------------------------------------------------------
-SUPPLEMENT = True       # add additional information to the results: overlapping dispensations, opioids to opioid naive patients, etc
+```
+usage: mu.py [-h] [-r RATIO] [-p PARTIAL_RATIO] [-d DAYS_BEFORE] [-nf] [-t] [-ns] [-o OVERLAP_RATIO]
+             [-ot {last,part,both}] [-n NAIVE_RATIO] [-m MME_THRESHOLD] [-ta] [-w WORKBOOK_NAME] [-na]
+             [-f FIRST_WRITTEN_DATE] [-l LAST_WRITTEN_DATE]
 
-OVERLAP_RATIO = .9      # patient name similarity between opioid and benzo prescriptions to confirm overlap
-OVERLAP_TYPE = 'last'   # last, part, both; how overlaps are counted, see readme
-NAIVE_RATIO = .7        # patient name similarity between 2 opioid rx to confirm patient is NOT opioid naive
-MME_THRESHOLD = 90      # mme threshold for single rx
+configure constants
+
+options:
+  -h, --help            show this help message and exit
+  -r, --ratio RATIO     patient name similarity ratio for full search (default: 0.7)
+  -p, --partial-ratio PARTIAL_RATIO
+                        patient name similarity ratio for partial search (default: 0.5)
+  -d, --days-before DAYS_BEFORE
+                        max number of days before an rx was written to give credit for a search (default: 7)
+  -nf, --no-filter-vets
+                        do not remove veterinarians from data
+  -t, --testing         save progress and detail files
+  -ns, --no-supplement  do not add additional information to the results
+  -o, --overlap-ratio OVERLAP_RATIO
+                        patient name similarity for confirming overlap (default: 0.9) only used if using
+                        --supplement
+  -ot, --overlap-type {last,part,both}
+                        type of overlap (default: last) only used if using --supplement
+  -n, --naive-ratio NAIVE_RATIO
+                        ratio for opioid naive confirmation (default: 0.7) only used if using --supplement
+  -m, --mme-threshold MME_THRESHOLD
+                        mme threshold for single rx (default: 90)
+  -ta, --tableau-api    pull tableau files using the api
+  -w, --workbook-name WORKBOOK_NAME
+                        workbook name in tableau (default: mu) only used if using --tableau-api
+  -na, --no-auto-date   pull data based on last month only used if using --tableau-api
+  -f, --first-written-date FIRST_WRITTEN_DATE
+                        first written date in tableau in YYYY-MM-DD format (default: 2024-04-01) only used if
+                        --tableau-api --no-auto-date
+  -l, --last-written-date LAST_WRITTEN_DATE
+                        last written date in tableau in YYYY-MM-DD format (default: 2024-04-30) only used if
+                        --tableau-api --no-auto-date
 ```
 
-it is recommended to be more generous (use a lower ratio) when setting a ratio that will go in a prescriber's favor such as `RATIO`, `PARTIAL_RATIO`, and `NAIVE_RATIO` and to be more strict with ratios that go 'against' a prescriber like `OVERLAP_RATIO`
+</details>
 
-this way, potential false positives are more likely to favor the prescriber
+for example, to disable the filter for removing veterinarian prescriptions from the data, lower the ratio for matching in the case of partial searches from the default of `0.5` to `0.4` and use no supplement data:
 
-### `OVERLAP_TYPE`
+```
+uv run mu.py --no-filter-vets --partial-ratio 0.4 --no-supplement
+```
+
+or:
+
+```
+uv run mu.py -nf -p 0.4 -ns
+```
+
+it is recommended to be more generous (use a lower ratio) when setting a ratio that will go in a prescriber's favor such as `--ratio`, `--partial-ratio`, and `--naive-ratio` and to be more strict with ratios that go 'against' a prescriber like `--overlap-ratio`, this way, potential false positives are more likely to favor the prescriber
+
+### `--overlap-type`
 
 this setting controls how overlapping rx are measured
 
@@ -93,7 +132,4 @@ this has the consequence of not counting any overlaps prescribed at the same tim
 `both`: includes `overlapping_rx_part` and `overlapping_rx_last` in the results  
 this comes at a performance cost as essentially, the overlap calculations must be run twice
 
----
-
-> for pushing ipynb files without their output:  
-> https://gist.github.com/33eyes/431e3d432f73371509d176d0dfb95b6e
+`overlap-type` is set to `last` by default
