@@ -232,11 +232,7 @@ def mu():
             (pl.col('disp_dob') == pl.col('search_dob'))
         )
         .with_columns(
-            pld.col('full_name').dist_str.levenshtein(pld.col('patient_name')).alias('dist')
-        )
-        .with_columns(
-            # ratio from dist
-            (1 - (pl.col('dist') / pl.max_horizontal(pl.col('full_name').str.len_chars(), pl.col('patient_name').str.len_chars()))).alias('ratio')
+            (1 - pld.col('full_name').dist_str.jaro_winkler('patient_name')).alias('ratio')
         )
         .filter(
             pl.col('ratio') >= pl.col('ratio_check')
@@ -426,11 +422,7 @@ def mu():
                     (pl.col('written_date').is_between(pl.col('filled_date_opi'), pl.col('rx_end_opi'))))
                 )
                 .with_columns(
-                    pld.col('patient_name_opi').dist_str.levenshtein(pld.col('patient_name')).alias('dist')
-                )
-                .with_columns(
-                    # ratio from dist
-                    (1 - (pl.col('dist') / pl.max_horizontal(pl.col('patient_name_opi').str.len_chars(), pl.col('patient_name').str.len_chars()))).alias('ratio')
+                    (1 - pld.col('patient_name_opi').dist_str.jaro_winkler('patient_name')).alias('ratio')
                 )
                 .filter(
                     pl.col('ratio') >= OVERLAP_RATIO
@@ -490,11 +482,7 @@ def mu():
                     (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi'))))
                 )
                 .with_columns(
-                    pld.col('patient_name_opi').dist_str.levenshtein(pld.col('patient_name')).alias('dist')
-                )
-                .with_columns(
-                    # ratio from dist
-                    (1 - (pl.col('dist') / pl.max_horizontal(pl.col('patient_name_opi').str.len_chars(), pl.col('patient_name').str.len_chars()))).alias('ratio')
+                    (1 - pld.col('patient_name_opi').dist_str.jaro_winkler('patient_name')).alias('ratio')
                 )
                 .filter(
                     pl.col('ratio') >= OVERLAP_RATIO
@@ -576,11 +564,7 @@ def mu():
                 pl.col('written_date').is_between(pl.col('naive_filled_date'), pl.col('naive_end'))
             )
             .with_columns(
-                pld.col('naive_patient_name').dist_str.levenshtein(pld.col('patient_name')).alias('dist')
-            )
-            .with_columns(
-                # ratio from dist
-                (1 - (pl.col('dist') / pl.max_horizontal(pl.col('naive_patient_name').str.len_chars(), pl.col('patient_name').str.len_chars()))).alias('ratio')
+                (1 - pld.col('naive_patient_name').dist_str.jaro_winkler('patient_name')).alias('ratio')
             )
             .filter(
                 pl.col('ratio') >= NAIVE_RATIO
