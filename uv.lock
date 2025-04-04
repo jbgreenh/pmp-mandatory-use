@@ -910,6 +910,7 @@ dependencies = [
     { name = "levenshtein" },
     { name = "nbconvert" },
     { name = "polars" },
+    { name = "polars-distance" },
     { name = "tableauserverclient" },
 ]
 
@@ -921,6 +922,7 @@ requires-dist = [
     { name = "levenshtein", specifier = "==0.26.1" },
     { name = "nbconvert", specifier = ">=7.16.5" },
     { name = "polars", specifier = "==1.19.0" },
+    { name = "polars-distance", specifier = ">=0.5.2" },
     { name = "tableauserverclient", specifier = "==0.35" },
 ]
 
@@ -936,6 +938,26 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ea/9a/bee8ab37ab82b8eea75170afa3b37ea7e1df74e4c4da8f6c93b3009977fd/polars-1.19.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:30305ef4e1b634c67a5d985832296fade9908482c5b1abb0100800808b2d090e", size = 29704437 },
     { url = "https://files.pythonhosted.org/packages/57/ec/74afa5699e37e03e3acc7f241f4e2c3e8c91847524005424d9cf038b3034/polars-1.19.0-cp39-abi3-win_amd64.whl", hash = "sha256:de4aa45e24f8f94a1da9cc6031a7db6fa65ac7de8246fac0bc581ebb427d0643", size = 32846039 },
     { url = "https://files.pythonhosted.org/packages/cf/5b/c6f6c70ddc9d3070dee65f4640437cb84ccb4cca04f7a81b01db15329ae3/polars-1.19.0-cp39-abi3-win_arm64.whl", hash = "sha256:d7ca7aeb63fa22c0a00f6cfa95dd5252c249e83dd4d1b954583a59f97a8e407b", size = 29029208 },
+]
+
+[[package]]
+name = "polars-distance"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "polars" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/20/e2/dced643a7f619afe4c8badf5b219c82462afca5c7864414ff0c9e89a1462/polars_distance-0.5.2.tar.gz", hash = "sha256:40d32dc5006c4da6cb9a6e5b06bde7490b7169c7b51b85ce6fe9d320ba143fe3", size = 34877 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dc/a3/608d53a603d055819e0754cfe8b9179e55839d1ba6280c491fde3d28dca3/polars_distance-0.5.2-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:4eacd1abac6281637a0f84b4d0e2f4917a4868df45334985c24492f48468d9b9", size = 5327327 },
+    { url = "https://files.pythonhosted.org/packages/de/19/ab325281a47728950ab688e7692a4fcc37e5c71d1100b5629c826b76bf01/polars_distance-0.5.2-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:fe83210374f43202ffba19a0f308920fb4da9ba11a9dcfd7b28b8ae37d76677b", size = 4584395 },
+    { url = "https://files.pythonhosted.org/packages/c2/a0/0f3b833053f6ac7aa3dc8c2d76aa6e91628dfbddeb090129b589b70a39d7/polars_distance-0.5.2-cp38-abi3-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:83a590c4147c501b8c91621f75ca8ce009c1aa77404d636ac30c331fa3f8d24b", size = 5965077 },
+    { url = "https://files.pythonhosted.org/packages/5e/46/7290f14835072c98f5d3e2e4a1cb166cc66c9a587f049535d43fd00ab437/polars_distance-0.5.2-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b970937c5c242828429a39bcefb807f5e41ac1e725743601d6061460afbd4b22", size = 5167776 },
+    { url = "https://files.pythonhosted.org/packages/30/4d/c90da24df0313e85a0c4a046a8ffcb4b2fa0df377b699c18e078767688c4/polars_distance-0.5.2-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:85103a4474e8787b482f5ac8e05b34546b52da0af495a612eb95eb7584f34ff5", size = 6002189 },
+    { url = "https://files.pythonhosted.org/packages/77/17/410b024340fde9a161c5d35bece7c172b3853f2483723816e183c367375a/polars_distance-0.5.2-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:8f6304fd940dfabd0de193733d599ae735d4015867f3adeaa0f57c8bcc2290a8", size = 5938003 },
+    { url = "https://files.pythonhosted.org/packages/75/91/fb069e93ef02e4e1eca5b344eba713aedaf67274874f90d7340f98d78806/polars_distance-0.5.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:966cd3d5273063174a0e70252a238c52b25dd301b2adca0a75e50b630f2aaa89", size = 5775986 },
+    { url = "https://files.pythonhosted.org/packages/5e/63/f3f778e48164992a116a0ee3500dbc34cf3593c36cb9a16d3142e74d390e/polars_distance-0.5.2-cp38-abi3-win32.whl", hash = "sha256:d67b9b0d22c21eafaf40c4fd011fa728f7a18616146b0f8cd46e936d07ccccb2", size = 5403274 },
+    { url = "https://files.pythonhosted.org/packages/7d/8f/87af769d3c1aaa246eb88eb5e580fa3425bc7f245b19b5b2458841f7f244/polars_distance-0.5.2-cp38-abi3-win_amd64.whl", hash = "sha256:8e3fa84d6b6f51931916d7de380ab0625cacd29719e6605d891ccdb24514f9c5", size = 5865751 },
 ]
 
 [[package]]

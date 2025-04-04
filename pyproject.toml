@@ -11,6 +11,7 @@ dependencies = [
     "levenshtein==0.26.1",
     "nbconvert>=7.16.5",
     "polars==1.19.0",
+    "polars-distance>=0.5.2",
     "tableauserverclient==0.35",
 ]
 

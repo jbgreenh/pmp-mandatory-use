@@ -1,13 +1,13 @@
 import argparse
 import calendar
-import time
 import os
+import time
 from datetime import date, timedelta
 
-from dotenv import load_dotenv
 import polars as pl
+import polars_distance as pld
 import tableauserverclient as TSC
-from Levenshtein import ratio
+from dotenv import load_dotenv
 
 
 def add_days(n:int, d:date = date.today()):
@@ -232,13 +232,12 @@ def mu():
             (pl.col('disp_dob') == pl.col('search_dob'))
         )
         .with_columns(
-            pl.struct(['full_name', 'patient_name'])
-            .map_elements(lambda x: ratio(x['full_name'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
+            (1 - pld.col('full_name').dist_str.jaro_winkler('patient_name')).alias('ratio')
         )
-        .collect(streaming=True)
         .filter(
             pl.col('ratio') >= pl.col('ratio_check')
         )
+        .collect(streaming=True)
         .unique(subset=['rx_number','prescriber_dea','written_date'])
         .select('rx_number','prescriber_dea','written_date')
         .with_columns(
@@ -423,8 +422,7 @@ def mu():
                     (pl.col('written_date').is_between(pl.col('filled_date_opi'), pl.col('rx_end_opi'))))
                 )
                 .with_columns(
-                    pl.struct(['patient_name_opi', 'patient_name'])
-                    .map_elements(lambda x: ratio(x['patient_name_opi'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
+                    (1 - pld.col('patient_name_opi').dist_str.jaro_winkler('patient_name')).alias('ratio')
                 )
                 .filter(
                     pl.col('ratio') >= OVERLAP_RATIO
@@ -484,8 +482,7 @@ def mu():
                     (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi'))))
                 )
                 .with_columns(
-                    pl.struct(['patient_name_opi', 'patient_name'])
-                    .map_elements(lambda x: ratio(x['patient_name_opi'], x['patient_name']), return_dtype=pl.Float32).alias('ratio')
+                    (1 - pld.col('patient_name_opi').dist_str.jaro_winkler('patient_name')).alias('ratio')
                 )
                 .filter(
                     pl.col('ratio') >= OVERLAP_RATIO
@@ -567,8 +564,7 @@ def mu():
                 pl.col('written_date').is_between(pl.col('naive_filled_date'), pl.col('naive_end'))
             )
             .with_columns(
-                pl.struct(['patient_name', 'naive_patient_name'])
-                .map_elements(lambda x: ratio(x['patient_name'], x['naive_patient_name']), return_dtype=pl.Float32).alias('ratio')
+                (1 - pld.col('naive_patient_name').dist_str.jaro_winkler('patient_name')).alias('ratio')
             )
             .filter(
                 pl.col('ratio') >= NAIVE_RATIO
