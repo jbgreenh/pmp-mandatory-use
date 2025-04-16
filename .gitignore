@@ -3,3 +3,4 @@
 **/*.csv
 **/*.txt
 **/secrets.toml
+.env

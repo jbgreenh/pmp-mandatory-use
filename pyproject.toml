@@ -5,11 +5,22 @@ description = "custom prescriber mandatory use compliance module for prescriptio
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "dotenv>=0.9.9",
     "ipykernel>=6.29.5",
     "jupyter>=1.1.1",
     "levenshtein==0.26.1",
     "nbconvert>=7.16.5",
     "polars==1.19.0",
+    "polars-distance>=0.5.2",
     "tableauserverclient==0.35",
-    "toml>=0.10.2",
 ]
+
+[tool.ruff]
+target-version='py313'
+
+[tool.ruff.format]
+quote-style = 'preserve'
+indent-style = 'space'
+
+[tool.basedpyright]
+typeCheckingMode = 'standard'
