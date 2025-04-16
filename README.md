@@ -43,6 +43,7 @@ to make use of `tableauserverclient` to have the script pull the data instead of
 5. the script automatically chooses dates, using the full previous month (if today is `May 24, 2024`, written start date will be set to `April 1, 2024` and written end date will be set to `April 30, 2024`)
 6. to set custom start and end dates, use `--no-auto-date` or `-na` to turn off auto-dates, `--first-written-date` or `-f` to set the first written date and `--last-written-date` or `-l` to set the last written date
 7. for example, to run the script for the month of January 2021, use `uv run mu.py -ta -na -f 2021-01-01 -l 2021-01-31`; note that setting longer date ranges will drastically effect performance, as well as risk timing out the `tableauserverclient`
+8. for more details on the available arguments when running `mu.py` see [settings](#settings)
 
 </details>
 
