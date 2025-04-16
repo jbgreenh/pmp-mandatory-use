@@ -134,6 +134,6 @@ this comes at a performance cost as essentially, the overlap calculations must b
 
 `overlap-type` is set to `last` by default
 
-#### notebook version
+### notebook version
 
 to use the old (ipynb) version, use the `notebook` branch: `git checkout notebook`
