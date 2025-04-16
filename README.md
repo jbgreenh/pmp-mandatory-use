@@ -25,7 +25,7 @@ to make use of `tableauserverclient` to have the script pull the data instead of
    ```
    you can find your server address and site name from the url you use to access tableau, for example:
    `https://server.name.here.com/#/site/site_name` the server name would be `https://server.name.here.com` and the site name would be `site_name`
-2. update the workbooks in tableau with these 4 parameters (you can set the default values all to the same date for speed in the tableau client, since the `mu` notebook sets these values itself for querying tableau anyway):
+2. update the workbooks in tableau with these 4 parameters (you can set the default values all to the same date for speed in the tableau client, since `mu.py` sets these values itself for querying tableau anyway):
    | parameter | description |
    |------------------|-------------|
    | first_of_month | short date |
