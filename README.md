@@ -137,4 +137,4 @@ this comes at a performance cost as essentially, the overlap calculations must b
 
 ### notebook version
 
-to use the old (ipynb) version, use the `notebook` branch: `git checkout notebook`
+to use the old ipynb version (no longer supported), use the `notebook` branch: `git checkout notebook`
