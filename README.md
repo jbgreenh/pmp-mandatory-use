@@ -133,3 +133,7 @@ this has the consequence of not counting any overlaps prescribed at the same tim
 this comes at a performance cost as essentially, the overlap calculations must be run twice
 
 `overlap-type` is set to `last` by default
+
+#### notebook version
+
+to use the old (ipynb) version, use the `notebook` branch: `git checkout notebook`
