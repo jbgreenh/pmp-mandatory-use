@@ -99,8 +99,11 @@ data on pmp database users
 this data is required to add supplemental information such as overlapping prescriptions, opioids to opioid naive patients, etc.  
 number of rx written over MME threshold and opioid and benzodiazepine counts do not require supplemental data
 
-```python
-SUPPLEMENT = True
+to run the script without supplemental data
+
+```bash
+uv run mu.py -ns
+
 ```
 
 ## `active_rx_data.csv`
