@@ -157,6 +157,9 @@ def mu():
         )
         .explode('dea_number')
         .select('true_id', 'dea_number')
+        .with_columns(
+            pl.col('dea_number').str.strip_chars()
+        )
     )
 
     pattern = r'^[A-Za-z]{2}\d{7}$' # 2 letters followed by 7 digits
