@@ -26,8 +26,8 @@ filter the data according to state mandatory use requirements
 | MY(Written At) | month(s) for the report, <br />performance improves as fewer months are included |
 | Days Supply | according to state requirements |
 | Prescriber PDMP Role | exclude medical residents with prescriptive authority |  
-| Patient Location | exclude as neccessary (AZ excludes hospice here) |  
-| Prescription Treatment Type | exclude as neccessary (AZ excludes hospice and palliative here) |
+| Patient Location | exclude as neccessary (AZ excludes hospice as well as other inpatient locations here) |  
+| Prescription Treatment Type | exclude as neccessary (AZ excludes hospice, palliative, and cancer_related here) |
 | Drug Schedule | exclude as neccessary (AZ filters to schedules 2, 3, and 4 here) |
 
 ---
