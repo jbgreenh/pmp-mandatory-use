@@ -669,8 +669,8 @@ def parse_arguments():
     parser.add_argument('-ta', '--tableau-api', action='store_true', help='pull tableau files using the api')
     parser.add_argument('-w', '--workbook-name', type=str, default='mu', help='workbook name in tableau (default: %(default)s) only used if using --tableau-api')
     parser.add_argument('-na', '--no-auto-date', action='store_false', help='pull data based on last month only used if using --tableau-api')
-    parser.add_argument('-f', '--first-written-date', type=str, default=str(date(2024, 4, 1)), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
-    parser.add_argument('-l', '--last-written-date', type=str, default=str(date(2024, 4, 30)), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
+    parser.add_argument('-f', '--first-written-date', type=date.fromisoformat, default=date(2024, 4, 1), help='first written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
+    parser.add_argument('-l', '--last-written-date', type=date.fromisoformat, default=date(2024, 4, 30), help='last written date in tableau in YYYY-MM-DD format (default: %(default)s) only used if --tableau-api --no-auto-date')
 
     return parser.parse_args()
 
@@ -692,8 +692,8 @@ def main():
     MME_THRESHOLD = args.mme_threshold
     WORKBOOK_NAME = args.workbook_name
     AUTO_DATE = args.no_auto_date
-    FIRST_WRITTEN_DATE = date.fromisoformat(args.first_written_date)
-    LAST_WRITTEN_DATE = date.fromisoformat(args.last_written_date)
+    FIRST_WRITTEN_DATE = args.first_written_date
+    LAST_WRITTEN_DATE = args.last_written_date
 
     if args.tableau_api:
         pull_files()
