@@ -10,8 +10,9 @@ import tableauserverclient as TSC
 from dotenv import load_dotenv
 
 
-def add_days(n:int, d:date = date.today()):
+def add_days(n: int, d: date = date.today()):
   return d + timedelta(n)
+
 
 def filter_vets(df):
     if FILTER_VETS:
@@ -28,6 +29,7 @@ def filter_vets(df):
 
     return df
 
+
 def pull_files():
     t_start = time.perf_counter()
     if AUTO_DATE:
@@ -38,7 +40,7 @@ def pull_files():
         last_of_month = LAST_WRITTEN_DATE
         first_of_month = FIRST_WRITTEN_DATE
 
-    print(f'pulling files using written dates from {str(first_of_month)} to {str(last_of_month)}...')
+    print(f'pulling files using written dates from {first_of_month!s} to {last_of_month!s}...')
 
     load_dotenv()
 
@@ -48,23 +50,23 @@ def pull_files():
     token_value = os.environ.get('TABLEAU_TOKEN_VALUE')
 
     missing_tab_vars = [var for var, value in {
-        'TABLEAU_SERVER':server,
-        'TABLEAU_SITE':site,
-        'TABLEAU_TOKEN_NAME':token_name,
-        'TABLEAU_TOKEN_VALUE':token_value,
+        'TABLEAU_SERVER': server,
+        'TABLEAU_SITE': site,
+        'TABLEAU_TOKEN_NAME': token_name,
+        'TABLEAU_TOKEN_VALUE': token_value,
     }.items() if value is None]
 
     if missing_tab_vars:
         raise Exception(f".env file missing required variable(s): {', '.join(missing_tab_vars)}")
 
     tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site)
-    tableau_server = TSC.Server(server, use_server_version=True, http_options={'verify':False})
+    tableau_server = TSC.Server(server, use_server_version=True, http_options={'verify': False})
 
-    def csv_from_view_id(file_name:str, view_id:str, filters:dict|None=None) -> None:
+    def csv_from_view_id(file_name: str, view_id: str, filters: dict | None = None) -> None:
         if filters:
             options = TSC.CSVRequestOptions()
-            for k,v in filters.items():
-                options.vf(k,v)
+            for k, v in filters.items():
+                options.vf(k, v)
         else:
             options = None
         view = tableau_server.views.get_by_id(view_id)
@@ -72,12 +74,12 @@ def pull_files():
         with open(f'data/{file_name}.csv', 'wb') as f:
             f.write(b''.join(view.csv))
 
-    def find_view_luid(view_name:str, workbook_name:str) -> str:
+    def find_view_luid(view_name: str, workbook_name: str) -> str:
         all_workbooks = list(TSC.Pager(tableau_server.workbooks))
-        searched_workbook = [workbook for workbook in all_workbooks if workbook.name==workbook_name][0]
+        searched_workbook = [workbook for workbook in all_workbooks if workbook.name == workbook_name][0]
         tableau_server.workbooks.populate_views(searched_workbook)
         views = searched_workbook.views
-        searched_view = [view for view in views if view.name==view_name][0]
+        searched_view = [view for view in views if view.name == view_name][0]
         if searched_view.id is None:
             raise Exception(f'luid for {view_name} in {workbook_name} not found')
         return searched_view.id
@@ -99,8 +101,8 @@ def pull_files():
         first_for_search = add_days(-DAYS_BEFORE, first_of_month)
 
         filters = {
-            'first_of_month':first_of_month, 'last_of_month':last_of_month,
-            'first_for_search':first_for_search, 'last_for_search':last_for_search
+            'first_of_month': first_of_month, 'last_of_month': last_of_month,
+            'first_for_search': first_for_search, 'last_for_search': last_for_search
         }
 
         print('pulling dispensations_data...')
@@ -138,14 +140,15 @@ def pull_files():
         t_elapsed = t_end - t_start
         print(f'files pulled: {t_elapsed:.2f}s')
 
+
 def mu():
     print('preparing files...')
     t_start_mu = time.perf_counter()
     users = (
         pl.scan_csv('data/ID_data.csv', infer_schema_length=10000)
         .rename({
-            'Associated DEA Number(s)':'dea_number(s)', 'User ID':'true_id', 'User Full Name':'user_full_name', 'State Professional License':'license_number',
-            'Specialty Level 1':'specialty_1', 'Specialty Level 2':'specialty_2', 'Specialty Level 3':'specialty_3'
+            'Associated DEA Number(s)': 'dea_number(s)', 'User ID': 'true_id', 'User Full Name': 'user_full_name', 'State Professional License': 'license_number',
+            'Specialty Level 1': 'specialty_1', 'Specialty Level 2': 'specialty_2', 'Specialty Level 3': 'specialty_3'
         })
     )
 
@@ -162,15 +165,15 @@ def mu():
         )
     )
 
-    pattern = r'^[A-Za-z]{2}\d{7}$' # 2 letters followed by 7 digits
+    pattern = r'^[A-Za-z]{2}\d{7}$'  # 2 letters followed by 7 digits
     dispensations = (
         pl.scan_csv('data/dispensations_data.csv', infer_schema_length=10000)
         .rename({'Month, Day, Year of Patient Birthdate': 'disp_dob', 'Month, Day, Year of Written At': 'written_date',
                  'Month, Day, Year of Filled At': 'filled_date', 'Month, Day, Year of Dispensations Created At': 'disp_created_date',
                  'Prescriber First Name': 'prescriber_first_name', 'Prescriber Last Name': 'prescriber_last_name',
                  'Orig Patient First Name': 'patient_first_name', 'Orig Patient Last Name': 'patient_last_name',
-                 'Prescriber DEA': 'prescriber_dea', 'Generic Name':'generic_name', 'Prescription Number':'rx_number',
-                 'AHFS Description':'ahfs', 'Daily MME':'mme', 'Days Supply':'days_supply', 'Animal Name':'animal_name'})
+                 'Prescriber DEA': 'prescriber_dea', 'Generic Name': 'generic_name', 'Prescription Number': 'rx_number',
+                 'AHFS Description': 'ahfs', 'Daily MME': 'mme', 'Days Supply': 'days_supply', 'Animal Name': 'animal_name'})
         .with_columns(
             pl.col(['disp_dob', 'written_date', 'filled_date', 'disp_created_date']).str.to_date('%B %d, %Y'),
             pl.col('prescriber_dea').str.to_uppercase().str.strip_chars(),
@@ -178,7 +181,7 @@ def mu():
             (pl.col('prescriber_first_name') + ' ' + pl.col('prescriber_last_name')).str.to_uppercase().alias('prescriber_name')
         )
         .filter(
-            (pl.col('prescriber_dea').str.contains(pattern))
+            pl.col('prescriber_dea').str.contains(pattern)
         )
         .join(users_explode, how='left', left_on='prescriber_dea', right_on='dea_number', coalesce=True)
         .collect()
@@ -191,7 +194,7 @@ def mu():
 
     dispensations = filter_vets(dispensations)
 
-    #for filtering searches to only the days we could potentially need
+    # for filtering searches to only the days we could potentially need
     first_of_month = dispensations['written_date'].min()
     last_of_month = dispensations['written_date'].max()
     assert isinstance(first_of_month, date), 'minimum of written_date should be a date'
@@ -241,8 +244,8 @@ def mu():
             pl.col('ratio') >= pl.col('ratio_check')
         )
         .collect(streaming=True)
-        .unique(subset=['rx_number','prescriber_dea','written_date'])
-        .select('rx_number','prescriber_dea','written_date')
+        .unique(subset=['rx_number', 'prescriber_dea', 'written_date'])
+        .select('rx_number', 'prescriber_dea', 'written_date')
         .with_columns(
             pl.lit(True).alias('search')
         )
@@ -250,15 +253,15 @@ def mu():
 
     final_dispensations = (
         dispensations
-        .join(dispensations_with_searches, how='left', on=['rx_number','prescriber_dea','written_date'], coalesce=True)
+        .join(dispensations_with_searches, how='left', on=['rx_number', 'prescriber_dea', 'written_date'], coalesce=True)
         .fill_null(False)
-        .unique(subset=['rx_number','prescriber_dea','written_date'])
+        .unique(subset=['rx_number', 'prescriber_dea', 'written_date'])
         .with_columns(
             pl.col('true_id').fill_null(pl.col('prescriber_dea')).alias('final_id')
         )
     )
 
-    pattern_cap = r'^([A-Za-z]{2}\d{7})$' # 2 letters followed by 7 digits
+    pattern_cap = r'^([A-Za-z]{2}\d{7})$'  # 2 letters followed by 7 digits
     deas = dispensations.select('prescriber_dea', 'prescriber_name').lazy()
     results = (
         final_dispensations
@@ -269,7 +272,7 @@ def mu():
             (pl.col('final_id').str.to_integer(base=10, strict=False).cast(pl.Int64)).alias('true_id'),
             (pl.col('final_id').str.extract(pattern_cap)).alias('unreg_dea')
         )
-        .rename({'len':'dispensations', 'search':'searches'})
+        .rename({'len': 'dispensations', 'search': 'searches'})
         .lazy()
         .join(users, how='left', on='true_id', coalesce=True)
         .join(deas, how='left', left_on='unreg_dea', right_on='prescriber_dea', coalesce=True)
@@ -280,7 +283,7 @@ def mu():
             pl.col('true_id').is_not_null().alias('registered')
         )
         .drop('prescriber_name')
-        .rename({'user_full_name':'prescriber_name'})
+        .rename({'user_full_name': 'prescriber_name'})
         .select(
             'final_id', 'prescriber_name', 'dea_number(s)', 'license_number', 'specialty_1', 'specialty_2', 'specialty_3',
             'dispensations', 'searches', 'rate', 'registered'
@@ -306,13 +309,13 @@ def mu():
         (pl.col('disp_created_date') + pl.duration(days=1)).alias('opi_start_date')
         )
         .rename({
-            'written_date':'opi_written_date', 'filled_date':'opi_filled_date',
-            'patient_name':'opi_patient_name', 'disp_created_date':'opi_disp_created_date'
+            'written_date': 'opi_written_date', 'filled_date': 'opi_filled_date',
+            'patient_name': 'opi_patient_name', 'disp_created_date': 'opi_disp_created_date'
         })
         .collect()
         .group_by('final_id')
         .len()
-        .rename({'len':'opi_rx'})
+        .rename({'len': 'opi_rx'})
     )
 
     benzo_count = (
@@ -324,13 +327,13 @@ def mu():
             (pl.col('disp_created_date') + pl.duration(days=1)).alias('benzo_start_date')
         )
         .rename({
-            'written_date':'benzo_written_date', 'filled_date':'benzo_filled_date',
-            'patient_name':'benzo_patient_name', 'disp_created_date':'benzo_disp_created_date'
+            'written_date': 'benzo_written_date', 'filled_date': 'benzo_filled_date',
+            'patient_name': 'benzo_patient_name', 'disp_created_date': 'benzo_disp_created_date'
         })
         .collect()
         .group_by('final_id')
         .len()
-        .rename({'len':'benzo_rx'})
+        .rename({'len': 'benzo_rx'})
     )
 
     # add counts of opi and benzo disps
@@ -359,7 +362,7 @@ def mu():
         )
         .group_by('final_id')
         .len()
-        .rename({'len':'rx_over_mme_threshold'})
+        .rename({'len': 'rx_over_mme_threshold'})
     )
 
     # add count of rx over the mme threshold to the results
@@ -381,10 +384,10 @@ def mu():
         active = (
             pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
             .rename({
-                'Month, Day, Year of Patient Birthdate':'dob', 'Month, Day, Year of Filled At':'filled_date',
-                'Month, Day, Year of Dispensations Created At':'create_date', 'Month, Day, Year of Written At':'written_date',
-                'Orig Patient First Name':'patient_first_name', 'Orig Patient Last Name':'patient_last_name', 'Prescriber DEA':'dea',
-                'AHFS Description':'ahfs', 'Month, Day, Year of rx_end':'rx_end', 'Animal Name':'animal_name'
+                'Month, Day, Year of Patient Birthdate': 'dob', 'Month, Day, Year of Filled At': 'filled_date',
+                'Month, Day, Year of Dispensations Created At': 'create_date', 'Month, Day, Year of Written At': 'written_date',
+                'Orig Patient First Name': 'patient_first_name', 'Orig Patient Last Name': 'patient_last_name', 'Prescriber DEA': 'dea',
+                'AHFS Description': 'ahfs', 'Month, Day, Year of rx_end': 'rx_end', 'Animal Name': 'animal_name'
             })
             .join(users_explode, how='left', left_on='dea', right_on='dea_number', coalesce=True)
             .with_columns(
@@ -421,8 +424,8 @@ def mu():
                 benzo_active
                 .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
                 .filter(
-                    ((pl.col('written_date_opi').is_between(pl.col('filled_date'), pl.col('rx_end'))) |
-                    (pl.col('written_date').is_between(pl.col('filled_date_opi'), pl.col('rx_end_opi'))))
+                    (pl.col('written_date_opi').is_between(pl.col('filled_date'), pl.col('rx_end'))) |
+                    (pl.col('written_date').is_between(pl.col('filled_date_opi'), pl.col('rx_end_opi')))
                 )
                 .with_columns(
                     (1 - pld.col('patient_name_opi').dist_str.jaro_winkler('patient_name')).alias('ratio')
@@ -439,7 +442,7 @@ def mu():
             benzo_dispensations_overlap = (
                 overlap_active
                 .filter(
-                    (pl.col('written_date').is_between(first_of_month, last_of_month))
+                    pl.col('written_date').is_between(first_of_month, last_of_month)
                 )
                 .select('final_id')
                 .group_by('final_id')
@@ -449,10 +452,10 @@ def mu():
             opi_dispensations_overlap = (
                 overlap_active
                 .filter(
-                    (pl.col('written_date_opi').is_between(first_of_month, last_of_month))
+                    pl.col('written_date_opi').is_between(first_of_month, last_of_month)
                 )
                 .select('final_id_opi')
-                .rename({'final_id_opi':'final_id'})
+                .rename({'final_id_opi': 'final_id'})
                 .group_by('final_id')
                 .len()
             )
@@ -461,7 +464,7 @@ def mu():
                 pl.concat([benzo_dispensations_overlap, opi_dispensations_overlap])
                 .group_by('final_id')
                 .sum()
-                .rename({'len':'overlapping_rx_part'})
+                .rename({'len': 'overlapping_rx_part'})
             )
 
             # add count of overlapping rx to the results
@@ -481,8 +484,8 @@ def mu():
                 .join(opi_active, how='left', on='dob', suffix='_opi', coalesce=True)
                 .filter(
                     # using create_date + 1 day for start date, adjust for reporting frequency
-                    ((pl.col('written_date_opi').is_between((pl.col('create_date') + pl.duration(days=1)), pl.col('rx_end'))) |
-                    (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi'))))
+                    (pl.col('written_date_opi').is_between((pl.col('create_date') + pl.duration(days=1)), pl.col('rx_end'))) |
+                    (pl.col('written_date').is_between((pl.col('create_date_opi') + pl.duration(days=1)), pl.col('rx_end_opi')))
                 )
                 .with_columns(
                     (1 - pld.col('patient_name_opi').dist_str.jaro_winkler('patient_name')).alias('ratio')
@@ -514,7 +517,7 @@ def mu():
                     (pl.col('written_date') < pl.col('written_date_opi'))
                 )
                 .select('final_id_opi')
-                .rename({'final_id_opi':'final_id'})
+                .rename({'final_id_opi': 'final_id'})
                 .group_by('final_id')
                 .len()
             )
@@ -523,7 +526,7 @@ def mu():
                 pl.concat([benzo_dispensations_overlap, opi_dispensations_overlap])
                 .group_by('final_id')
                 .sum()
-                .rename({'len':'overlapping_rx_last'})
+                .rename({'len': 'overlapping_rx_last'})
             )
 
             # add count of overlapping rx to the results
@@ -545,8 +548,8 @@ def mu():
         naive = (
             pl.scan_csv('data/naive_rx_data.csv', infer_schema_length=10000)
             .rename({
-                'Orig Patient First Name':'patient_first_name', 'Orig Patient Last Name':'patient_last_name', 'Max. naive_end':'naive_end',
-                'Month, Day, Year of Patient Birthdate':'dob', 'Month, Day, Year of Filled At':'naive_filled_date', 'Animal Name':'animal_name'
+                'Orig Patient First Name': 'patient_first_name', 'Orig Patient Last Name': 'patient_last_name', 'Max. naive_end': 'naive_end',
+                'Month, Day, Year of Patient Birthdate': 'dob', 'Month, Day, Year of Filled At': 'naive_filled_date', 'Animal Name': 'animal_name'
             })
             .with_columns(
                 pl.col(['dob', 'naive_filled_date']).str.to_date('%B %-d, %Y'),
@@ -592,7 +595,7 @@ def mu():
                 pl.col('opi_to_opi_naive')
             )
             .group_by('final_id').len()
-            .rename({'len':'opi_to_opi_naive'})
+            .rename({'len': 'opi_to_opi_naive'})
             .collect()
         )
 
@@ -653,6 +656,7 @@ def mu():
     print('stats below:')
     print(stats)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='configure constants')
 
@@ -674,11 +678,11 @@ def parse_arguments():
 
     return parser.parse_args()
 
+
 def main():
     args = parse_arguments()
 
-    global RATIO, PARTIAL_RATIO, DAYS_BEFORE, FILTER_VETS, TESTING, SUPPLEMENT, OVERLAP_RATIO, OVERLAP_TYPE, NAIVE_RATIO
-    global MME_THRESHOLD, TABLEAU_API, WORKBOOK_NAME, AUTO_DATE, FIRST_WRITTEN_DATE, LAST_WRITTEN_DATE
+    global RATIO, PARTIAL_RATIO, DAYS_BEFORE, FILTER_VETS, TESTING, SUPPLEMENT, OVERLAP_RATIO, OVERLAP_TYPE, NAIVE_RATIO, MME_THRESHOLD, TABLEAU_API, WORKBOOK_NAME, AUTO_DATE, FIRST_WRITTEN_DATE, LAST_WRITTEN_DATE
 
     RATIO = args.ratio
     PARTIAL_RATIO = args.partial_ratio
@@ -699,6 +703,7 @@ def main():
         pull_files()
 
     mu()
+
 
 if __name__ == '__main__':
     main()
