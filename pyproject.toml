@@ -7,9 +7,6 @@ requires-python = ">=3.14"
 dependencies = [
     "az-pmp-utils",
     "dotenv>=0.9.9",
-    "ipykernel>=6.29.5",
-    "jupyter>=1.1.1",
-    "nbconvert>=7.16.5",
     "polars>=1.19.0",
     "polars-distance>=0.5.2",
     "tableauserverclient>=0.35",
@@ -72,6 +69,14 @@ convention = "google"
   "PLR2004", # Magic value used in comparison, ...
   "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
+
+[tool.rumdl.MD033]
+allowed-elements = ['details', 'summary']  # allow collapsible sections
+
+[tool.rumdl.MD013]
+line-length = 0  # do not enforce line-length limits
+reflow = true    # reflow lines using the below `sentence-per-line` rule where appropriate
+reflow-mode = 'sentence-per-line'
 
 [tool.uv.sources]
 az-pmp-utils = { git = "https://github.com/jbgreenh/az-pmp-utils" }
