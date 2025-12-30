@@ -5,7 +5,14 @@ custom mandatory use compliance module for prescription monitoring programs
 ## setup
 
 this project uses [uv](https://github.com/astral-sh/uv?tab=readme-ov-file)  
-after installing `uv` on your system using the link above and adding the input data ([data](#data)), you can run the script using `uv run mu.py`
+after installing `uv` on your system using the link above and adding the input data ([data](#data)), you can run the script using `uv run mu.py`  
+
+if you wish to use a custom timezone, set your environment variable `TZ` to the your preferred timezone  
+you can also create a file named `.env` in the root folder of this repo and include the `TZ` variable there:
+
+```text
+TZ='America/Phoenix'
+```
 
 ## data
 
