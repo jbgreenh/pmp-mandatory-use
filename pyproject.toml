@@ -71,7 +71,7 @@ convention = "google"
 ]
 
 [tool.rumdl.MD033]
-allowed-elements = ['details', 'summary']  # allow collapsible sections
+allowed-elements = ['details', 'summary', 'br']  # allow collapsible sections, as well as line breaks (done here because there is no specific table-allowed-elements in rumdl)
 
 [tool.rumdl.MD013]
 line-length = 0  # do not enforce line-length limits

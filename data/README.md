@@ -3,13 +3,9 @@
 the following is a description of the input files required in this `data` folder to successfully run the notebook  
 file names and field names should match those below exactly
 
-# base
+## base
 
 this data is required to run the notebook at its most basic version, outputting prescribers, dipsensations, searches, and search rate
-
-```python
-SUPPLEMENT = False
-```
 
 ## `dispensations_data.csv`
 
@@ -18,6 +14,7 @@ data on all dispensations requiring a search
 ---
 
 filter the data according to state mandatory use requirements  
+
 | filter | description |
 |--------------------------|----------------------------------------------------------------------------------------|
 | AHFS Description | according to state requirements |
@@ -94,7 +91,7 @@ data on pmp database users
 | Specialty Level 2          | second level of taxonomy            |
 | Specialty Level 3          | third level of taxonomy             |
 
-# supplement
+## supplement
 
 this data is required to add supplemental information such as overlapping prescriptions, opioids to opioid naive patients, etc.  
 number of rx written over MME threshold and opioid and benzodiazepine counts do not require supplemental data
