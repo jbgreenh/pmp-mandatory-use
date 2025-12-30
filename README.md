@@ -14,7 +14,7 @@ you can also create a file named `.env` in the root folder of this repo and incl
 TZ='America/Phoenix'
 ```
 
-the `TZ` variable should be set with a `TZ identifier` value from the `List` table found in this [list of tz database timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)  
+the `TZ` variable should be set with a `TZ identifier` value from the [list of tz database timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)  
 if no `TZ` variable is found, the script will default to UTC  
 
 ## data
