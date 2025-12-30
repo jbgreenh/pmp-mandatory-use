@@ -69,7 +69,7 @@ def pull_files() -> None:
     if args.no_auto_date:
         first_of_month, last_of_month = args.first_written_date, args.last_written_date
     else:
-        today = datetime.now(tz=ZoneInfo(os.environ.get('TZ', 'UTC')))
+        today = datetime.now(tz=ZoneInfo(os.environ.get('TZ', 'UTC'))).date()
         last_of_month = add_days(-1, today.replace(day=1))
         first_of_month = last_of_month.replace(day=1)
 
@@ -123,6 +123,19 @@ def pull_files() -> None:
 
 
 def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_month: date, results: pl.DataFrame, users_explode: pl.LazyFrame) -> pl.DataFrame:
+    """
+    add supplemental information (opi and benzo overlaps, opi to opi naive, etc) to the data
+
+    args:
+        final_dispensations: lf with dispensation data
+        first_of_month: first date of the month in question
+        last_of_month: last date of the month in question
+        results: df with dispensation and search rates
+        users_explode: lf with user data with one row for each dea number
+
+    returns:
+        results df updated with supplemental information
+    """
     print('adding supplemental information...')
     t_start_sup = time.perf_counter()
 
@@ -357,9 +370,19 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
     return results
 
 
-def mu():
+def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
+    """
+    prep the input files for analysis
+
+    args:
+        first_of_month: the first date for inspection
+        last_of_month: the last date for inspection
+
+    returns:
+        dispensations, searches, users, users_explode lazyframes
+    """
     print('preparing files...')
-    t_start_mu = time.perf_counter()
+    t_start = time.perf_counter()
     users = (
         pl.scan_csv('data/ID_data.csv', infer_schema_length=10000)
         .rename({
@@ -409,14 +432,6 @@ def mu():
 
     dispensations = filter_vets(dispensations)
 
-    # for filtering searches to only the days we could potentially need
-    if args.no_auto_date:
-        first_of_month, last_of_month = args.first_written_date, args.last_written_date
-    else:
-        today = datetime.now(tz=ZoneInfo(os.environ.get('TZ', 'UTC')))
-        last_of_month = add_days(-1, today.replace(day=1))
-        first_of_month = last_of_month.replace(day=1)
-
     min_date = add_days(-args.days_before, first_of_month)
     max_date = add_days(1, last_of_month)
 
@@ -428,7 +443,7 @@ def mu():
         .join(dispensations, on='true_id', how='semi')
         .with_columns(
             pl.col(['search_dob', 'created_date']).str.to_date('%B %d, %Y'),
-            (pl.col('first_name') + ' ' + pl.col('last_name')).alias('full_name').str.to_uppercase(),
+            (pl.col('first_name') + ' ' + pl.col('last_name')).str.to_uppercase().alias('full_name'),
             (pl.col('partial_first') | pl.col('partial_last')).alias('partial')
         )
         .filter(
@@ -436,14 +451,28 @@ def mu():
         )
         .collect()
         .with_columns(
-            (pl.col('partial').map_elements(lambda x: args.partial_ratio if x else args.ratio, return_dtype=pl.Float32)).alias('ratio_check')
+            (pl.col('partial').map_elements(lambda x: args.partial_ratio if x else args.ratio, return_dtype=pl.Float64)).alias('ratio_check')
         )
         .drop('first_name', 'last_name', 'partial_first', 'partial_last')
         .lazy()
     )
-    t_elapsed = time.perf_counter() - t_start_mu
+    t_elapsed = time.perf_counter() - t_start
     print(f'users, dispensations, searches prepared: {t_elapsed:.2f}s')
+    return dispensations, searches, users, users_explode
 
+
+def check_for_searches(dispensations: pl.LazyFrame, searches: pl.LazyFrame, users: pl.LazyFrame) -> tuple[pl.LazyFrame, pl.LazyFrame]:
+    """
+    checks the dispenations lazyframe for corresponding searches
+
+    args:
+        dispensations: a lazyframe with all of the dispensations in question
+        searches: a lazyframe with all searches performed in the relevant timeframe
+        users: a lazyframe with user information
+
+    returns:
+        final_dispensations, results lazyframes
+    """
     print('checking dispensations for searches...')
     t_start = time.perf_counter()
     dispensations_with_searches = (
@@ -459,7 +488,6 @@ def mu():
         .filter(
             pl.col('ratio') >= pl.col('ratio_check')
         )
-        # .collect(engine='streaming')
         .unique(subset=['rx_number', 'prescriber_dea', 'written_date'])
         .select('rx_number', 'prescriber_dea', 'written_date')
         .with_columns(
@@ -507,11 +535,20 @@ def mu():
     )
     t_elapsed = time.perf_counter() - t_start
     print(f'dispensations checked for searches: {t_elapsed:.2f}s')
+    return final_dispensations, results
 
-    if args.testing:
-        results.collect().write_csv('search_results.csv')
-        final_dispensations.collect(engine='streaming').write_csv('dispensations_results.csv')
 
+def add_counts(final_dispensations: pl.LazyFrame, results: pl.LazyFrame) -> pl.DataFrame:
+    """
+    add opioid and benzo counts, as well as mme over threshold to results and collect
+
+    args:
+        final_dispensations: a lazyframe with searches matched to dispensations
+        results: a lazyframe with dispensation and search counts by prescriber
+
+    returns:
+        results as a collected dataframe
+    """
     print('adding opioid and benzo counts...')
     t_start = time.perf_counter()
     opi_count = (
@@ -575,19 +612,46 @@ def mu():
     )
 
     # add count of rx over the mme threshold to the results
-    results = (
+    new_results = (
         results
         .join(over_mme, how='left', on='final_id', coalesce=True)
         .with_columns(
             pl.col('rx_over_mme_threshold').fill_null(0)
         )
-        .collect(engine='streaming')
     )
     t_elapsed = time.perf_counter() - t_start
     print(f'mmes added: {t_elapsed:.2f}s')
+    print('collecting...')
+    t_start = time.perf_counter()
+    new_results = new_results.collect(engine='streaming')
+    t_elapsed = time.perf_counter() - t_start
+    print(f'collected: {t_elapsed:.2f}s')
+    return new_results
+
+
+def mu() -> None:
+    """process the input files and write the output files"""
+    t_start_mu = time.perf_counter()
+
+    # for filtering searches to only the days we could potentially need
+    if args.no_auto_date:
+        first_of_month, last_of_month = args.first_written_date, args.last_written_date
+    else:
+        last_of_month = add_days(-1, datetime.now(tz=ZoneInfo(os.environ.get('TZ', 'UTC'))).replace(day=1).date())
+        first_of_month = last_of_month.replace(day=1)
+
+    dispensations, searches, users, users_explode = prep_files(first_of_month, last_of_month)
+
+    final_dispensations, results = check_for_searches(dispensations, searches, users)
+
+    results = add_counts(final_dispensations, results)
 
     if not args.no_supplement:
         results = supplement(final_dispensations, first_of_month, last_of_month, results, users_explode)
+
+    if args.testing:
+        results.write_csv('search_results.csv')
+        final_dispensations.collect(engine='streaming').write_csv('dispensations_results.csv')
 
     print('processing results and writing files...')
     t_start = time.perf_counter()
@@ -597,17 +661,12 @@ def mu():
     )
 
     start_month = calendar.month_name[first_of_month.month].lower()
-    start_year = first_of_month.year
     end_month = calendar.month_name[last_of_month.month].lower()
-    end_year = last_of_month.year
-    result_file_name = 'results_full.csv'
-
-    tail = 'full' if not args.no_supplement else 'base'
 
     if start_month == end_month:
-        result_file_name = f'{start_month}{start_year}_mandatory_use_{tail}.csv'
+        result_file_name = f'{start_month}{first_of_month.year}_mandatory_use_{'full' if not args.no_supplement else 'base'}.csv'
     else:
-        result_file_name = f'{start_month}{start_year}-{end_month}{end_year}_mandatory_use_{tail}.csv'
+        result_file_name = f'{start_month}{first_of_month.year}-{end_month}{last_of_month.year}_mandatory_use_{'full' if not args.no_supplement else 'base'}.csv'
 
     results.write_csv(result_file_name)
     print(f'{result_file_name} saved')
@@ -624,8 +683,8 @@ def mu():
 
     t_elapsed = time.perf_counter() - t_start
     print(f'results complete: {t_elapsed:.2f}s')
-    t_elapsed_mu = time.perf_counter() - t_start_mu
-    print(f'mu complete!: {t_elapsed_mu:.2f}s')
+    t_elapsed = time.perf_counter() - t_start_mu
+    print(f'mu complete!: {t_elapsed:.2f}s')
     print('stats below:')
     print(stats)
 
