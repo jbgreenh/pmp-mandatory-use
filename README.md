@@ -14,6 +14,8 @@ you can also create a file named `.env` in the root folder of this repo and incl
 TZ='America/Phoenix'
 ```
 
+if no `TZ` variable is found, the script will default to UTC  
+
 ## data
 
 see the [data readme](data/README.md) for more information on the required input data
