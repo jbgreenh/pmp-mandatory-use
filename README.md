@@ -5,7 +5,17 @@ custom mandatory use compliance module for prescription monitoring programs
 ## setup
 
 this project uses [uv](https://github.com/astral-sh/uv?tab=readme-ov-file)  
-after installing `uv` on your system using the link above and adding the input data ([data](#data)), you can run the script using `uv run mu.py`
+after installing `uv` on your system using the link above and adding the input data ([data](#data)), you can run the script using `uv run mu.py`  
+
+if you wish to use a custom timezone, set your environment variable `TZ` to the your preferred timezone  
+you can also create a file named `.env` in the root folder of this repo and include the `TZ` variable there:
+
+```text
+TZ='America/Phoenix'
+```
+
+the `TZ` variable should be set with a `TZ identifier` value from the [list of tz database timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)  
+if no `TZ` variable is found, the script will default to UTC  
 
 ## data
 
@@ -17,28 +27,34 @@ see the [data readme](data/README.md) for more information on the required input
 to make use of `tableauserverclient` to have the script pull the data instead of downloading manually:
 
 1. you will need a `.env` file in the following format in the root folder of this repo:
-   ```
+
+   ```text
    TABLEAU_SERVER='tableau.server.address.com'
    TABLEAU_SITE='insert-sitename'
    TABLEAU_TOKEN_NAME='INSERT-YOUR-TOKEN-NAME-HERE'
    TABLEAU_TOKEN_VALUE='INSERT-YOUR-TABLEAU-API-KEY-HERE'
    ```
+
    you can find your server address and site name from the url you use to access tableau, for example:
    `https://server.name.here.com/#/site/site_name` the server name would be `https://server.name.here.com` and the site name would be `site_name`
 2. update the workbooks in tableau with these 4 parameters (you can set the default values all to the same date for speed in the tableau client, since `mu.py` sets these values itself for querying tableau anyway):
+
    | parameter | description |
    |------------------|-------------|
    | first_of_month | short date |
    | first_for_search | short date |
    | last_of_month | short date |
    | last_for_search | short date |
+
 3. add the following calculated fields and set them as filters as described:
+
    | calculated field | data source | code | description |
    |--------------------|-----------------|----------------------------------------------------------------------------------------------|--------------------------------------------------------|
    | between_active | dispensations | [rx_end] >= [first_of_month] and [Filled At] <= [last_of_month] | replace other time based filters in `active_rx` with this set to True |
    | between_f_l_month | dispensations | [Written At] <= [last_of_month] and [Written At] >= [first_of_month] | replace other time based filters in `dispensations` with this set to True |
    | between_naive | dispensations | [naive_end] >= [first_of_month] and [Filled At] <= [last_of_month] | replace other time based filters in `naive_rx` with this set to True |
    | between_for_search | search requests | [Search Creation Date] <= [last_for_search] and [Search Creation Date] >= [first_for_search] | replace other time based filters in `searches` with this set To true |
+
 4. use `--tableau-api` or `-ta` when running `mu.py`, if you use a different name than `mu` for the workbook you use for mandatory use in tableau, set the workbook name using `--workbook-name name` `-w name` (view names must match those in the [data readme](data/README.md) without the `_data.csv`).
 5. the script automatically chooses dates, using the full previous month (if today is `May 24, 2024`, written start date will be set to `April 1, 2024` and written end date will be set to `April 30, 2024`)
 6. to set custom start and end dates, use `--no-auto-date` or `-na` to turn off auto-dates, `--first-written-date` or `-f` to set the first written date and `--last-written-date` or `-l` to set the last written date
@@ -55,7 +71,7 @@ use `uv run mu.py -h` to see the available settings and their defaults:
 <details>
     <summary>help output</summary>
 
-```
+```text
 usage: mu.py [-h] [-r RATIO] [-p PARTIAL_RATIO] [-d DAYS_BEFORE] [-nf] [-t] [-ns] [-o OVERLAP_RATIO]
              [-ot {last,part,both}] [-n NAIVE_RATIO] [-m MME_THRESHOLD] [-ta] [-w WORKBOOK_NAME] [-na]
              [-f FIRST_WRITTEN_DATE] [-l LAST_WRITTEN_DATE]
@@ -98,13 +114,13 @@ options:
 
 for example, to disable the filter for removing veterinarian prescriptions from the data, lower the ratio for matching in the case of partial searches from the default of `0.5` to `0.4` and use no supplement data:
 
-```
+```text
 uv run mu.py --no-filter-vets --partial-ratio 0.4 --no-supplement
 ```
 
 or:
 
-```
+```text
 uv run mu.py -nf -p 0.4 -ns
 ```
 

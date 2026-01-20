@@ -3,17 +3,19 @@ name = "pmp-mandatory-use"
 version = "0.1.0"
 description = "custom prescriber mandatory use compliance module for prescription monitoring programs"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
+    "az-pmp-utils",
     "dotenv>=0.9.9",
-    "ipykernel>=6.29.5",
-    "jupyter>=1.1.1",
-    "levenshtein==0.26.1",
-    "nbconvert>=7.16.5",
-    "polars==1.19.0",
+    "polars>=1.19.0",
     "polars-distance>=0.5.2",
-    "tableauserverclient==0.35",
+    "tableauserverclient>=0.35",
 ]
+
+[tool.basedpyright]
+typeCheckingMode = 'standard'
+useLibraryCodeForTypes = true
+disableOrganizeImports = true
 
 [tool.ruff]
 target-version='py313'
@@ -22,5 +24,59 @@ target-version='py313'
 quote-style = 'preserve'
 indent-style = 'space'
 
-[tool.basedpyright]
-typeCheckingMode = 'standard'
+[tool.ruff.lint]
+select = ["ALL"]
+preview = true
+ignore = [
+  "ANN003",  # missing-type-kwargs
+  "COM812",  # missing-trailing-comma
+  "CPY001",  # Missing copyright notice at top of file
+  "D100",    # Missing docstring in public module
+  "D104",    # Missing docstring in public package
+  "D203",    # blank line required before class docstring
+  "D205",    # blank line required between summary line and description
+  "D211",    # no-blank-line-before-class
+  "D212",    # summary on first line of docstring
+  "D213",    # multi-line-summary-second-line
+  "D405",    # capitalization in docstring section
+  "D403",    # capitalization in docstring start
+  "D415",    # punctuation in docstring
+  "E501",    # line too long
+  "EM101",   # raw-string-in-exception
+  "FIX002",  # line-contains-todo
+  "ISC001",  # Conflicts with formatter ruff
+  "T201",    # Print found
+  "TD002",   # Missing author in TODO `# TODO(<author_name>): ...`
+  "TD003",   # missing-todo-link
+  "TRY003",  # raise-vanilla-args
+  "Q000",    # prefer double quotes
+]
+fixable = ["ALL"]
+unfixable = [
+  # "D", # dont fix docstyle from others
+]
+# allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = [
+  "S101",    # asserts allowed in tests...
+  "ARG",     # Unused function args -> fixtures nevertheless are functionally relevant...
+  "FBT",     # don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+  "PLR2004", # Magic value used in comparison, ...
+  "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+
+[tool.rumdl.MD033]
+allowed-elements = ['details', 'summary', 'br']  # allow collapsible sections, as well as line breaks (done here because there is no specific table-allowed-elements in rumdl)
+
+[tool.rumdl.MD013]
+line-length = 0  # do not enforce line-length limits
+reflow = true    # reflow lines using the below `sentence-per-line` rule where appropriate
+reflow-mode = 'sentence-per-line'
+
+[tool.uv.sources]
+az-pmp-utils = { git = "https://github.com/jbgreenh/az-pmp-utils" }
