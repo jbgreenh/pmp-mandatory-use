@@ -64,7 +64,7 @@ def csv_from_view_id(file_name: str, luid: str, filters: dict | None = None) -> 
 
 
 def pull_files() -> None:
-    """pull the necessary files mu files from tableau and write them to the data folder"""
+    """pull the necessary mu files from tableau and write them to the data folder"""
     t_start_pull_files = time.perf_counter()
     if args.no_auto_date:
         first_of_month, last_of_month = args.first_written_date, args.last_written_date
