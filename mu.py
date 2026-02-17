@@ -140,7 +140,7 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
     t_start_sup = time.perf_counter()
 
     active = (
-        pl.scan_csv('data/active_rx_data.csv', infer_schema_length=10000)
+        pl.scan_csv('data/active_rx_data.csv', infer_schema=False)
         .rename({
             'Month, Day, Year of Patient Birthdate': 'dob', 'Month, Day, Year of Filled At': 'filled_date',
             'Month, Day, Year of Dispensations Created At': 'create_date', 'Month, Day, Year of Written At': 'written_date',
@@ -154,6 +154,18 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
             (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('patient_name'),
         )
         .drop('true_id', 'patient_first_name', 'patient_last_name')
+        .match_to_schema({
+            'dob': pl.Date,
+            'filled_date': pl.Date,
+            'create_date': pl.Date,
+            'written_date': pl.Date,
+            'patient_name': pl.String,
+            'dea': pl.String,
+            'ahfs': pl.String,
+            'rx_end': pl.Date,
+            'final_id': pl.String,
+            'animal_name': pl.String,
+        })
     )
 
     active = filter_vets(active)
@@ -302,7 +314,7 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
     print('processing opioid naive...')
     t_start = time.perf_counter()
     naive = (
-        pl.scan_csv('data/naive_rx_data.csv', infer_schema_length=10000)
+        pl.scan_csv('data/naive_rx_data.csv', infer_schema=False)
         .rename({
             'Orig Patient First Name': 'patient_first_name', 'Orig Patient Last Name': 'patient_last_name', 'Max. naive_end': 'naive_end',
             'Month, Day, Year of Patient Birthdate': 'dob', 'Month, Day, Year of Filled At': 'naive_filled_date', 'Animal Name': 'animal_name'
@@ -313,6 +325,13 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
             (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('naive_patient_name')
         )
         .drop('patient_first_name', 'patient_last_name')
+        .match_to_schema({
+            'naive_patient_name': pl.String,
+            'naive_end': pl.Date,
+            'dob': pl.Date,
+            'naive_filled_date': pl.Date,
+            'animal_name': pl.String,
+        })
     )
 
     naive = filter_vets(naive)
@@ -384,7 +403,7 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
     print('preparing files...')
     t_start = time.perf_counter()
     users = (
-        pl.scan_csv('data/ID_data.csv', infer_schema_length=10000)
+        pl.scan_csv('data/ID_data.csv', infer_schema=False)
         .rename({
             'Associated DEA Number(s)': 'dea_number(s)', 'User ID': 'true_id', 'User Full Name': 'user_full_name', 'State Professional License': 'license_number',
             'Specialty Level 1': 'specialty_1', 'Specialty Level 2': 'specialty_2', 'Specialty Level 3': 'specialty_3'
@@ -406,7 +425,7 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
 
     pattern = r'^[A-Za-z]{2}\d{7}$'  # 2 letters followed by 7 digits
     dispensations = (
-        pl.scan_csv('data/dispensations_data.csv', infer_schema_length=10000)
+        pl.scan_csv('data/dispensations_data.csv', infer_schema=False)
         .rename({'Month, Day, Year of Patient Birthdate': 'disp_dob', 'Month, Day, Year of Written At': 'written_date',
                  'Month, Day, Year of Filled At': 'filled_date', 'Month, Day, Year of Dispensations Created At': 'disp_created_date',
                  'Prescriber First Name': 'prescriber_first_name', 'Prescriber Last Name': 'prescriber_last_name',
@@ -428,6 +447,22 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
             (pl.col('written_date').dt.offset_by('1d')).alias('end_date')   # to account for bamboo's issues handling UTC
         )
         .drop('patient_first_name', 'patient_last_name', 'prescriber_first_name', 'prescriber_last_name')
+        .match_to_schema({
+            'disp_dob': pl.Date,
+            'written_date': pl.Date,
+            'filled_date': pl.Date,
+            'disp_created_date': pl.Date,
+            'prescriber_name': pl.String,
+            'patient': pl.String,
+            'prescriber_dea': pl.String,
+            'generic_name': pl.String,
+            'rx_number': pl.String,
+            'ahfs': pl.String,
+            'mme': pl.Decimal,
+            'days_supply': pl.Int64,
+            'animal_name': pl.String,
+            'true_id': pl.String,
+        })
     )
 
     dispensations = filter_vets(dispensations)
@@ -436,7 +471,7 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
     max_date = add_days(1, last_of_month)
 
     searches = (
-        pl.scan_csv('data/searches_data.csv', infer_schema_length=10000)
+        pl.scan_csv('data/searches_data.csv', infer_schema=False)
         .rename({'Month, Day, Year of Search Creation Date': 'created_date', 'Month, Day, Year of Searched DOB':
                 'search_dob', 'Searched First Name': 'first_name', 'Searched Last Name': 'last_name',
                 'Partial First Name?': 'partial_first', 'Partial Last Name?': 'partial_last', 'True ID': 'true_id'})
@@ -455,6 +490,14 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
         )
         .drop('first_name', 'last_name', 'partial_first', 'partial_last')
         .lazy()
+        .match_to_schema({
+            'created_date': pl.Date,
+            'search_dob': pl.Date,
+            'full_name': pl.String,
+            'partial': pl.String,
+            'true_id': pl.String,
+            'ratio_check': pl.Decimal,
+        })
     )
     t_elapsed = time.perf_counter() - t_start
     print(f'users, dispensations, searches prepared: {t_elapsed:.2f}s')
