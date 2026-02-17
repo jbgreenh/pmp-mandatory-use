@@ -154,18 +154,6 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
             (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('patient_name'),
         )
         .drop('true_id', 'patient_first_name', 'patient_last_name')
-        .match_to_schema({
-            'dob': pl.Date,
-            'filled_date': pl.Date,
-            'create_date': pl.Date,
-            'written_date': pl.Date,
-            'patient_name': pl.String,
-            'dea': pl.String,
-            'ahfs': pl.String,
-            'rx_end': pl.Date,
-            'final_id': pl.String,
-            'animal_name': pl.String,
-        })
     )
 
     active = filter_vets(active)
@@ -325,13 +313,6 @@ def supplement(final_dispensations: pl.LazyFrame, first_of_month: date, last_of_
             (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('naive_patient_name')
         )
         .drop('patient_first_name', 'patient_last_name')
-        .match_to_schema({
-            'naive_patient_name': pl.String,
-            'naive_end': pl.Date,
-            'dob': pl.Date,
-            'naive_filled_date': pl.Date,
-            'animal_name': pl.String,
-        })
     )
 
     naive = filter_vets(naive)
@@ -436,7 +417,9 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
             pl.col(['disp_dob', 'written_date', 'filled_date', 'disp_created_date']).str.to_date('%B %d, %Y'),
             pl.col('prescriber_dea').str.to_uppercase().str.strip_chars(),
             (pl.col('patient_first_name') + ' ' + pl.col('patient_last_name')).str.to_uppercase().alias('patient_name'),
-            (pl.col('prescriber_first_name') + ' ' + pl.col('prescriber_last_name')).str.to_uppercase().alias('prescriber_name')
+            (pl.col('prescriber_first_name') + ' ' + pl.col('prescriber_last_name')).str.to_uppercase().alias('prescriber_name'),
+            pl.col('mme').str.to_decimal(scale=2),
+            pl.col('days_supply').str.to_integer(),
         )
         .filter(
             pl.col('prescriber_dea').str.contains(pattern)
@@ -447,22 +430,6 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
             (pl.col('written_date').dt.offset_by('1d')).alias('end_date')   # to account for bamboo's issues handling UTC
         )
         .drop('patient_first_name', 'patient_last_name', 'prescriber_first_name', 'prescriber_last_name')
-        .match_to_schema({
-            'disp_dob': pl.Date,
-            'written_date': pl.Date,
-            'filled_date': pl.Date,
-            'disp_created_date': pl.Date,
-            'prescriber_name': pl.String,
-            'patient': pl.String,
-            'prescriber_dea': pl.String,
-            'generic_name': pl.String,
-            'rx_number': pl.String,
-            'ahfs': pl.String,
-            'mme': pl.Decimal(),
-            'days_supply': pl.Int64,
-            'animal_name': pl.String,
-            'true_id': pl.String,
-        })
     )
 
     dispensations = filter_vets(dispensations)
@@ -490,14 +457,6 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
         )
         .drop('first_name', 'last_name', 'partial_first', 'partial_last')
         .lazy()
-        .match_to_schema({
-            'created_date': pl.Date,
-            'search_dob': pl.Date,
-            'full_name': pl.String,
-            'partial': pl.String,
-            'true_id': pl.String,
-            'ratio_check': pl.Decimal(),
-        })
     )
     t_elapsed = time.perf_counter() - t_start
     print(f'users, dispensations, searches prepared: {t_elapsed:.2f}s')
