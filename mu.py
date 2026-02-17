@@ -438,14 +438,11 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
     max_date = add_days(1, last_of_month)
 
     searches = (
-        pl.scan_csv('data/searches_data.csv', infer_schema=False)
+        pl.scan_csv('data/searches_data.csv', infer_schema=False, schema_overrides={'Partial First Name?': pl.Boolean, 'Partial Last Name?': pl.Boolean})
         .rename({'Month, Day, Year of Search Creation Date': 'created_date', 'Month, Day, Year of Searched DOB':
                 'search_dob', 'Searched First Name': 'first_name', 'Searched Last Name': 'last_name',
                 'Partial First Name?': 'partial_first', 'Partial Last Name?': 'partial_last', 'True ID': 'true_id'})
         .join(dispensations, on='true_id', how='semi')
-        .with_columns(
-            pl.col(['partial_first', 'partial_last']).cast(pl.Boolean)
-        )
         .with_columns(
             pl.col(['search_dob', 'created_date']).str.to_date('%B %d, %Y'),
             (pl.col('first_name') + ' ' + pl.col('last_name')).str.to_uppercase().alias('full_name'),
