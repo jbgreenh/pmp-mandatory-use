@@ -458,7 +458,7 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
             'generic_name': pl.String,
             'rx_number': pl.String,
             'ahfs': pl.String,
-            'mme': pl.Decimal,
+            'mme': pl.Decimal(),
             'days_supply': pl.Int64,
             'animal_name': pl.String,
             'true_id': pl.String,
@@ -496,7 +496,7 @@ def prep_files(first_of_month: date, last_of_month: date) -> tuple[pl.LazyFrame,
             'full_name': pl.String,
             'partial': pl.String,
             'true_id': pl.String,
-            'ratio_check': pl.Decimal,
+            'ratio_check': pl.Decimal(),
         })
     )
     t_elapsed = time.perf_counter() - t_start
