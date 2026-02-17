@@ -59,7 +59,7 @@ def csv_from_view_id(file_name: str, luid: str, filters: dict | None = None) -> 
         luid: the luid of the view
         filters: filters to apply to the tableau view
     """
-    lf = tableau.lazyframe_from_view_id(luid, filters)
+    lf = tableau.lazyframe_from_view_id(luid, filters, infer_schema_length=0)
     lf.collect().write_csv(f'data/{file_name}.csv')
 
 
