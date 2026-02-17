@@ -515,7 +515,7 @@ def check_for_searches(dispensations: pl.LazyFrame, searches: pl.LazyFrame, user
         .agg([pl.len(), pl.col('search').sum()])
         .with_columns(
             ((pl.col('search') / pl.col('len')) * 100).alias('rate'),
-            (pl.col('final_id').str.to_integer(base=10, strict=False).cast(pl.Int64)).alias('true_id'),
+            (pl.col('final_id').str.to_integer(base=10, strict=False).cast(pl.String)).alias('true_id'),
             (pl.col('final_id').str.extract(pattern_cap)).alias('unreg_dea')
         )
         .rename({'len': 'dispensations', 'search': 'searches'})
